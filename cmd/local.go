@@ -26,10 +26,9 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
-	"path/filepath"
 	"strconv"
-	"strings"
 
+	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -42,25 +41,17 @@ var localCmd = &cobra.Command{
 	Long: `Runs the codejam code locally using dcj.sh which should be in
 your path. It looks for updated .h file in ~/Downloads/`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cppFiles, err := filepath.Glob("*.cpp")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if len(cppFiles) < 1 {
-			log.Fatal("No cpp files found!")
-		}
-
-		if len(cppFiles) > 1 {
-			log.Fatal("Multiple cpp files found")
-		}
-
 		usr, err := user.Current()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		hFile := strings.TrimSuffix(cppFiles[0], ".cpp") + ".h"
+		file, err := utils.FindFileBasename("cpp")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		hFile := file + ".h"
 		downloadedHFile := path.Join(usr.HomeDir, "Downloads", hFile)
 
 		if _, err = os.Stat(downloadedHFile); err == nil {
@@ -68,7 +59,7 @@ your path. It looks for updated .h file in ~/Downloads/`,
 			os.Rename(downloadedHFile, hFile)
 		}
 
-		dcjCmd := exec.Command("dcj.sh", "test", "--source", cppFiles[0], "--nodes", strconv.Itoa(Nodes))
+		dcjCmd := exec.Command("dcj.sh", "test", "--source", file+".cpp", "--nodes", strconv.Itoa(Nodes))
 		dcjCmd.Stdout = os.Stdout
 		dcjCmd.Stderr = os.Stderr
 		dcjCmd.Run()

@@ -21,9 +21,13 @@
 package cmd
 
 import (
+	"io/ioutil"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/matematik7/didcj/inventory"
+	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -46,6 +50,52 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		servers, err := inv.Get()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		executable, err := os.Executable()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		serverJsonFile, err := utils.Json2File("servers", servers)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer os.Remove(serverJsonFile)
+
+		log.Println("Uploading didcj")
+		err = utils.Upload(executable, "didcj", servers...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("Uploading servers.json")
+		err = utils.Upload(serverJsonFile, "servers.json", servers...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("Uploading nodeid")
+		tmpFile, err := ioutil.TempFile("", "nodeid")
+		if err != nil {
+			log.Fatal(err)
+		}
+		for i, server := range servers {
+			_, err = tmpFile.WriteAt([]byte(strconv.Itoa(i)), 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = utils.Upload(tmpFile.Name(), "nodeid", server)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
 	},
 }
 

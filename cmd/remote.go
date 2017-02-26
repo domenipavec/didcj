@@ -23,7 +23,9 @@ package cmd
 import (
 	"log"
 
+	"github.com/matematik7/didcj/compile"
 	"github.com/matematik7/didcj/inventory"
+	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -47,8 +49,26 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		for _, server := range servers {
-			log.Println(server)
+		err = compile.GenerateMessageH(servers)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		file, err := utils.FindFileBasename("cpp")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("Compiling ...")
+		err = compile.Compile(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("Uploading ...")
+		err = utils.Upload(file+".app", file+".app", servers...)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
