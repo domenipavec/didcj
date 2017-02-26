@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -42,6 +43,9 @@ func Upload(srcFile, destFile string, servers ...*server.Server) error {
 			srcFile,
 			fmt.Sprintf("%s@%s:~/%s", server.Username, server.Ip.String(), destFile),
 		)
+
+		scpCmd.Stdout = os.Stdout
+		scpCmd.Stderr = os.Stderr
 
 		err := scpCmd.Start()
 		if err != nil {

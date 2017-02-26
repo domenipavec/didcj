@@ -21,21 +21,16 @@
 package cmd
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"os/exec"
-	"strconv"
+	"net/http"
 
-	"github.com/matematik7/didcj/inventory"
-	"github.com/matematik7/didcj/utils"
+	"github.com/matematik7/didcj/daemon"
 	"github.com/spf13/cobra"
 )
 
-// startCmd represents the start command
-var startCmd = &cobra.Command{
-	Use:   "start",
+// daemonCmd represents the daemon command
+var daemonCmd = &cobra.Command{
+	Use:   "daemon",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -44,98 +39,26 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		inv, err := inventory.Init("docker")
+		d := daemon.New()
+		err := d.Init()
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = inv.Start(10)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		servers, err := inv.Get()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		executable, err := os.Executable()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		serverJsonFile, err := utils.Json2File("servers", servers)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer os.Remove(serverJsonFile)
-
-		log.Println("Uploading didcj")
-		err = utils.Upload(executable, "didcj", servers...)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println("Uploading servers.json")
-		err = utils.Upload(serverJsonFile, "servers.json", servers...)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println("Uploading nodeid")
-		tmpFile, err := ioutil.TempFile("", "nodeid")
-		if err != nil {
-			log.Fatal(err)
-		}
-		for i, server := range servers {
-			_, err = tmpFile.WriteAt([]byte(strconv.Itoa(i)), 0)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = utils.Upload(tmpFile.Name(), "nodeid", server)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-		tmpFile.Close()
-		os.Remove(tmpFile.Name())
-
-		log.Println("Starting daemon")
-		for _, server := range servers {
-			sshCmd := exec.Command(
-				"sshpass",
-				"-p",
-				server.Password,
-				"ssh",
-				"-f",
-				"-o",
-				"StrictHostKeyChecking=no",
-				fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
-				"./didcj",
-				"daemon",
-			)
-
-			sshCmd.Stdout = os.Stdout
-			sshCmd.Stderr = os.Stderr
-
-			err := sshCmd.Run()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
+		log.Fatal(http.ListenAndServe(":3333", nil))
 	},
 }
 
 func init() {
-	remoteCmd.AddCommand(startCmd)
+	RootCmd.AddCommand(daemonCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// startCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// daemonCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// daemonCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 }
