@@ -44,7 +44,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal(http.ListenAndServe(":3333", nil))
+		log.Fatal(http.ListenAndServe(":"+daemon.Port, nil))
 	},
 }
 
