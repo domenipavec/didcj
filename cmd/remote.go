@@ -21,9 +21,13 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/matematik7/didcj/compile"
+	"github.com/matematik7/didcj/daemon"
 	"github.com/matematik7/didcj/inventory"
 	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
@@ -65,11 +69,18 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		log.Println("Uploading ...")
-		err = utils.Upload(file+".app", file+".app", servers...)
+		log.Println("Distributing ...")
+		appFile, err := os.Open(file + ".app")
 		if err != nil {
 			log.Fatal(err)
 		}
+		url := fmt.Sprintf("http://%s:%s/distribute/%s.app/?exec=true", servers[0].Ip.String(), daemon.Port, file)
+		_, err = http.Post(url, "application/data", appFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		appFile.Close()
+
 	},
 }
 
