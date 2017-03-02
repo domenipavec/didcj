@@ -23,12 +23,12 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/matematik7/didcj/compile"
 	"github.com/matematik7/didcj/daemon"
 	"github.com/matematik7/didcj/inventory"
+	"github.com/matematik7/didcj/runner"
 	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
 )
@@ -74,13 +74,32 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		url := fmt.Sprintf("http://%s:%s/distribute/%s.app/?exec=true", servers[0].Ip.String(), daemon.Port, file)
-		_, err = http.Post(url, "application/data", appFile)
+		url := fmt.Sprintf("/distribute/%s.app/?exec=true", file)
+		err = utils.Send(servers[0], url, appFile, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 		appFile.Close()
 
+		log.Println("Running...")
+		report := &daemon.RunReport{}
+		err = utils.Send(servers[0], "/run/", nil, report)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if report.Status == runner.DONE {
+			log.Println("Run successful!")
+		} else {
+			log.Println("Run failed!")
+		}
+
+		for i, messages := range report.Messages {
+			log.Printf("Messages from %d:", i)
+			for _, message := range messages {
+				log.Println(message)
+			}
+		}
 	},
 }
 

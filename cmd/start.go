@@ -27,6 +27,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"sync"
 
 	"github.com/matematik7/didcj/inventory"
 	"github.com/matematik7/didcj/utils"
@@ -100,13 +101,13 @@ to quickly create a Cobra application.`,
 		os.Remove(tmpFile.Name())
 
 		log.Println("Starting daemon")
-		for _, server := range servers {
-			sshCmd := exec.Command(
+		commands := make([]*exec.Cmd, len(servers))
+		for i, server := range servers {
+			commands[i] = exec.Command(
 				"sshpass",
 				"-p",
 				server.Password,
 				"ssh",
-				"-f",
 				"-o",
 				"StrictHostKeyChecking=no",
 				fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
@@ -114,14 +115,29 @@ to quickly create a Cobra application.`,
 				"daemon",
 			)
 
-			sshCmd.Stdout = os.Stdout
-			sshCmd.Stderr = os.Stderr
+			commands[i].Stdout = os.Stdout
+			commands[i].Stderr = os.Stderr
 
-			err := sshCmd.Run()
+			err := commands[i].Start()
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
+
+		log.Println("Waiting on ssh commands")
+		wg := &sync.WaitGroup{}
+		wg.Add(len(commands))
+		for _, command := range commands {
+			go func(sshCmd *exec.Cmd) {
+				err := sshCmd.Wait()
+				if err != nil {
+					log.Fatal(err)
+				}
+				wg.Done()
+			}(command)
+		}
+
+		wg.Wait()
 	},
 }
 

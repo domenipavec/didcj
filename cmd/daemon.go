@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/matematik7/didcj/config"
 	"github.com/matematik7/didcj/daemon"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +45,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal(http.ListenAndServe(":"+daemon.Port, nil))
+		log.Fatal(http.ListenAndServe(":"+config.DaemonPort, nil))
 	},
 }
 

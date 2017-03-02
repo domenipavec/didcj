@@ -1,14 +1,18 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/matematik7/didcj/config"
 	"github.com/matematik7/didcj/inventory/server"
 	"github.com/pkg/errors"
 )
@@ -77,4 +81,113 @@ func Json2File(prefix string, v interface{}) (string, error) {
 	tmpJsonFile.Close()
 
 	return tmpJsonFile.Name(), nil
+}
+
+func Send(destServer *server.Server, path string, input interface{}, output interface{}) error {
+	var err error
+	var response *http.Response
+
+	url := fmt.Sprintf("http://%s:%s%s", destServer.Ip.String(), config.DaemonPort, path)
+
+	var body io.Reader
+	if input != nil {
+		if inputReader, ok := input.(io.Reader); ok {
+			body = inputReader
+		} else {
+			buf := &bytes.Buffer{}
+			err := json.NewEncoder(buf).Encode(buf)
+			if err != nil {
+				return errors.Wrap(err, "post json encode")
+			}
+			body = buf
+		}
+		response, err = http.Post(url, "application/json", body)
+	} else {
+		response, err = http.Get(url)
+	}
+
+	if err != nil {
+		return errors.Wrap(err, "Post post")
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		errMsg, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return errors.Wrap(err, "Post read error")
+		}
+		return fmt.Errorf("Post %d: %s", response.StatusCode, string(errMsg))
+	}
+
+	if output != nil {
+		err = json.NewDecoder(response.Body).Decode(output)
+		if err != nil {
+			return errors.Wrap(err, "post json decode")
+		}
+	}
+
+	return nil
+}
+
+func SendAll(servers []*server.Server, path string, input interface{}, outputs interface{}) error {
+	errChan := make(chan error)
+	for i, srvr := range servers {
+		go func(j int, destServer *server.Server) {
+			var output interface{}
+			if outputs != nil {
+				if outints, ok := outputs.([]int); ok {
+					output = &outints[j]
+				} else if outstrings, ok := outputs.([]string); ok {
+					output = &outstrings[j]
+				} else if outslicestrings, ok := outputs.([][]string); ok {
+					output = &outslicestrings[j]
+				}
+			}
+			err := Send(destServer, path, input, output)
+			errChan <- err
+		}(i, srvr)
+	}
+
+	for _, server := range servers {
+		err := <-errChan
+		if err != nil {
+			return errors.Wrap(err, server.Ip.String())
+		}
+	}
+
+	return nil
+}
+
+func Nodeid() (int, error) {
+	nodeidFile, err := os.Open("nodeid")
+	if err != nil {
+		return 0, errors.Wrap(err, "Runner.Init open nodeid")
+	}
+	defer nodeidFile.Close()
+
+	var nodeid int
+	_, err = fmt.Fscanf(nodeidFile, "%d", &nodeid)
+	if err != nil {
+		return 0, errors.Wrap(err, "Runner.Init fscanf nodeid")
+	}
+
+	return nodeid, nil
+}
+
+func ServerList() ([]*server.Server, error) {
+	var servers []*server.Server
+
+	serversFile, err := os.Open("servers.json")
+	if err != nil {
+		return nil, errors.Wrap(err, "serverlist servers.json open")
+	}
+	defer serversFile.Close()
+
+	serversDecoder := json.NewDecoder(serversFile)
+	err = serversDecoder.Decode(&servers)
+	if err != nil {
+		return nil, errors.Wrap(err, "serverlist servers.json decode")
+	}
+
+	return servers, nil
 }

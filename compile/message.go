@@ -122,6 +122,7 @@ int Receive(int source) {
 	checkNodeId(source);
 
 	fputc(RECEIVE, stderr);
+	fputint(source, stderr);
 	fflush(stderr);
 
 	int length;
@@ -168,7 +169,7 @@ char GetChar(int source) {
 int GetInt(int source) {
 	checkNodeId(source);
 
-	int result;
+	int result = 0;
 	for (int i = 0; i < 4; i++) {
 		result |= (int)(getRawByte(&incoming_buffers[source])) << (8 * i);
 	}
@@ -178,7 +179,7 @@ int GetInt(int source) {
 long long GetLL(int source) {
 	checkNodeId(source);
 
-	long long result;
+	long long result = 0;
 	for (int i = 0; i < 8; i++) {
 		result |= (long long)(getRawByte(&incoming_buffers[source])) << (8 * i);
 	}
