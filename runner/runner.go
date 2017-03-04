@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"os/exec"
 	"sync"
@@ -240,6 +241,9 @@ func (r *Runner) tcpListen() {
 			continue
 		}
 
+		if len(r.receiveChannels[source]) > 0 {
+			log.Printf("Message from %d when %d already in queue!", source, len(r.receiveChannels[source]))
+		}
 		r.receiveChannels[source] <- data
 		conn.Close()
 	}
