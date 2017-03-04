@@ -32,7 +32,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Nodes int
+var LocalNodes int
 
 // localCmd represents the local command
 var localCmd = &cobra.Command{
@@ -59,7 +59,7 @@ your path. It looks for updated .h file in ~/Downloads/`,
 			os.Rename(downloadedHFile, hFile)
 		}
 
-		dcjCmd := exec.Command("dcj.sh", "test", "--source", file+".cpp", "--nodes", strconv.Itoa(Nodes))
+		dcjCmd := exec.Command("dcj.sh", "test", "--source", file+".cpp", "--nodes", strconv.Itoa(LocalNodes))
 		dcjCmd.Stdout = os.Stdout
 		dcjCmd.Stderr = os.Stderr
 		dcjCmd.Run()
@@ -79,5 +79,5 @@ func init() {
 	// is called directly, e.g.:
 	// localCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	localCmd.Flags().IntVar(&Nodes, "nodes", 10, "Number of local nodes")
+	localCmd.Flags().IntVar(&LocalNodes, "nodes", 10, "Number of local nodes")
 }
