@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -298,7 +299,7 @@ func (r *Runner) handleStdout() {
 		if len(msg) != 0 {
 			r.debug("stdout: " + msg[:len(msg)-1])
 		}
-		if err == io.EOF {
+		if err == io.EOF || err == os.ErrClosed {
 			return
 		} else if err != nil {
 			r.error(err, "handlestdout")
