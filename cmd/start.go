@@ -27,9 +27,9 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"sync"
 
 	"github.com/matematik7/didcj/inventory"
+	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
 )
@@ -103,44 +103,38 @@ to quickly create a Cobra application.`,
 		os.Remove(tmpFile.Name())
 
 		log.Println("Starting daemon")
-		commands := make([]*exec.Cmd, len(servers))
-		for i, server := range servers {
-			commands[i] = exec.Command(
-				"sshpass",
-				"-p",
-				server.Password,
-				"ssh",
-				"-o",
-				"StrictHostKeyChecking=no",
-				fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
-				"./didcj",
-				"daemon",
-			)
-
-			commands[i].Stdout = os.Stdout
-			commands[i].Stderr = os.Stderr
-
-			err := commands[i].Start()
-			if err != nil {
-				log.Fatal(err)
-			}
+		for _, server := range servers {
+			go startDaemon(server)
 		}
 
-		log.Println("Waiting on ssh commands")
-		wg := &sync.WaitGroup{}
-		wg.Add(len(commands))
-		for _, command := range commands {
-			go func(sshCmd *exec.Cmd) {
-				err := sshCmd.Wait()
-				if err != nil {
-					log.Fatal(err)
-				}
-				wg.Done()
-			}(command)
-		}
-
-		wg.Wait()
+		select {}
 	},
+}
+
+func startDaemon(server *models.Server) {
+	for {
+		cmd := exec.Command(
+			"sshpass",
+			"-p",
+			server.Password,
+			"ssh",
+			"-o",
+			"StrictHostKeyChecking=no",
+			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
+			"./didcj",
+			"daemon",
+		)
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
+		if err != nil {
+			log.Println(err)
+		}
+
+		log.Printf("Restarting daemon on %s", server.Ip.String())
+	}
 }
 
 func init() {
