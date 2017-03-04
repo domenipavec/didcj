@@ -34,6 +34,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var RemoteNodes int
+
 // remoteCmd represents the remote command
 var remoteCmd = &cobra.Command{
 	Use:   "remote",
@@ -50,6 +52,10 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		if RemoteNodes > 0 {
+			cfg.NumberOfNodes = RemoteNodes
+		}
+
 		inv, err := inventory.Init("docker")
 		if err != nil {
 			log.Fatal(err)
@@ -59,7 +65,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		err = compile.GenerateMessageH(servers)
+		err = compile.GenerateMessageH(cfg.NumberOfNodes)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -95,19 +101,10 @@ to quickly create a Cobra application.`,
 		}
 
 		maxTime := int64(0)
-		for _, report := range report.Reports {
+		for i, report := range report.Reports {
 			if report.RunTime > maxTime {
 				maxTime = report.RunTime
 			}
-		}
-
-		if report.Status == runner.DONE {
-			log.Printf("Run successful in %s!", utils.FormatDuration(maxTime))
-		} else {
-			log.Printf("Run failed in %s!", utils.FormatDuration(maxTime))
-		}
-
-		for i, report := range report.Reports {
 			log.Printf(
 				"Node %d (ip: %s, msgs: %d, largest: %d, time: %s, memory: %d):",
 				i,
@@ -120,6 +117,12 @@ to quickly create a Cobra application.`,
 			for _, message := range report.Messages {
 				log.Println(message)
 			}
+		}
+
+		if report.Status == runner.DONE {
+			log.Printf("Run successful in %s!", utils.FormatDuration(maxTime))
+		} else {
+			log.Printf("Run failed in %s!", utils.FormatDuration(maxTime))
 		}
 	},
 }
@@ -137,4 +140,5 @@ func init() {
 	// is called directly, e.g.:
 	// remoteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
+	remoteCmd.Flags().IntVar(&RemoteNodes, "nodes", -1, "Number of remote nodes")
 }

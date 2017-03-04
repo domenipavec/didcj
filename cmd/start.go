@@ -34,7 +34,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var RemoteNodes int
+var StartNodes int
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -51,7 +51,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = inv.Start(RemoteNodes)
+		err = inv.Start(StartNodes)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -156,5 +156,5 @@ func init() {
 	// is called directly, e.g.:
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	startCmd.Flags().IntVar(&RemoteNodes, "nodes", 100, "Number of remote nodes")
+	startCmd.Flags().IntVar(&StartNodes, "nodes", 100, "Number of remote nodes")
 }

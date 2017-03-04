@@ -24,7 +24,9 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 	}
 	request.Body.Close()
 
-	err = utils.SendAll(d.servers, "/start/", cfg, nil)
+	servers := d.servers[:cfg.NumberOfNodes]
+
+	err = utils.SendAll(servers, "/start/", cfg, nil)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -32,15 +34,15 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 
 	report := &RunReport{
 		Status:  runner.DONE,
-		Reports: make([]models.Report, len(d.servers)),
+		Reports: make([]models.Report, len(servers)),
 	}
 
-	statuses := make([]int, len(d.servers))
+	statuses := make([]int, len(servers))
 	done := false
 	for !done {
 		time.Sleep(time.Millisecond * 250)
 
-		err := utils.SendAll(d.servers, "/status/", nil, statuses)
+		err := utils.SendAll(servers, "/status/", nil, statuses)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
@@ -56,14 +58,14 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 		}
 
 		if !done && report.Status == runner.ERROR {
-			err := utils.SendAll(d.servers, "/stop/", nil, nil)
+			err := utils.SendAll(servers, "/stop/", nil, nil)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 			}
 		}
 	}
 
-	err = utils.SendAll(d.servers, "/report/", nil, report.Reports)
+	err = utils.SendAll(servers, "/report/", nil, report.Reports)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
