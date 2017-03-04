@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/matematik7/didcj/inventory/server"
+	"github.com/matematik7/didcj/models"
 )
 
 type Docker struct {
@@ -109,7 +109,7 @@ func (docker *Docker) Stop() error {
 	return nil
 }
 
-func (docker *Docker) Get() ([]*server.Server, error) {
+func (docker *Docker) Get() ([]*models.Server, error) {
 	args := filters.NewArgs()
 	args.Add("label", "didcj=didcj")
 	containers, err := docker.cli.ContainerList(docker.ctx, types.ContainerListOptions{
@@ -120,9 +120,9 @@ func (docker *Docker) Get() ([]*server.Server, error) {
 		return nil, err
 	}
 
-	servers := make([]*server.Server, 0, len(containers))
+	servers := make([]*models.Server, 0, len(containers))
 	for _, container := range containers {
-		servers = append(servers, &server.Server{
+		servers = append(servers, &models.Server{
 			Ip:       net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
 			Username: "root",
 			Password: "root",

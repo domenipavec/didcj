@@ -5,14 +5,15 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/matematik7/didcj/inventory/server"
+	"github.com/matematik7/didcj/config"
+	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/runner"
 	"github.com/matematik7/didcj/utils"
 	"github.com/pkg/errors"
 )
 
 type Daemon struct {
-	servers []*server.Server
+	servers []*models.Server
 	nodeid  int
 	runner  *runner.Runner
 }
@@ -45,13 +46,20 @@ func (d *Daemon) Init() error {
 	r.HandleFunc("/start/", d.StartHandler)
 	r.HandleFunc("/stop/", d.StopHandler)
 	r.HandleFunc("/status/", d.StatusHandler)
-	r.HandleFunc("/messages/", d.MessagesHandler)
+	r.HandleFunc("/report/", d.ReportHandler)
 	http.Handle("/", r)
 	return nil
 }
 
 func (d *Daemon) StartHandler(w http.ResponseWriter, request *http.Request) {
-	d.runner.Start()
+	cfg := &config.Config{}
+	err := json.NewDecoder(request.Body).Decode(cfg)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+	request.Body.Close()
+
+	d.runner.Start(cfg)
 }
 
 func (d *Daemon) StopHandler(w http.ResponseWriter, request *http.Request) {
@@ -66,8 +74,8 @@ func (d *Daemon) StatusHandler(w http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func (d *Daemon) MessagesHandler(w http.ResponseWriter, request *http.Request) {
-	err := json.NewEncoder(w).Encode(d.runner.Messages())
+func (d *Daemon) ReportHandler(w http.ResponseWriter, request *http.Request) {
+	err := json.NewEncoder(w).Encode(d.runner.Report())
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

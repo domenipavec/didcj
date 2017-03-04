@@ -26,6 +26,7 @@ import (
 	"os"
 
 	"github.com/matematik7/didcj/compile"
+	"github.com/matematik7/didcj/config"
 	"github.com/matematik7/didcj/daemon"
 	"github.com/matematik7/didcj/inventory"
 	"github.com/matematik7/didcj/runner"
@@ -44,6 +45,11 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg, err := config.Get()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		inv, err := inventory.Init("docker")
 		if err != nil {
 			log.Fatal(err)
@@ -83,20 +89,35 @@ to quickly create a Cobra application.`,
 
 		log.Println("Running...")
 		report := &daemon.RunReport{}
-		err = utils.Send(servers[0], "/run/", nil, report)
+		err = utils.Send(servers[0], "/run/", cfg, report)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if report.Status == runner.DONE {
-			log.Println("Run successful!")
-		} else {
-			log.Println("Run failed!")
+		maxTime := int64(0)
+		for _, report := range report.Reports {
+			if report.RunTime > maxTime {
+				maxTime = report.RunTime
+			}
 		}
 
-		for i, messages := range report.Messages {
-			log.Printf("Messages from %d:", i)
-			for _, message := range messages {
+		if report.Status == runner.DONE {
+			log.Printf("Run successful in %s!", utils.FormatDuration(maxTime))
+		} else {
+			log.Printf("Run failed in %s!", utils.FormatDuration(maxTime))
+		}
+
+		for i, report := range report.Reports {
+			log.Printf(
+				"Node %d (ip: %s, msgs: %d, largest: %d, time: %s, memory: %d):",
+				i,
+				report.Ip,
+				report.SendCount,
+				report.LargestMsg,
+				utils.FormatDuration(report.RunTime),
+				report.MaxMemory,
+			)
+			for _, message := range report.Messages {
 				log.Println(message)
 			}
 		}

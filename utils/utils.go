@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/matematik7/didcj/config"
-	"github.com/matematik7/didcj/inventory/server"
+	"github.com/matematik7/didcj/models"
 	"github.com/pkg/errors"
 )
 
@@ -34,7 +34,7 @@ func FindFileBasename(extension string) (string, error) {
 	return strings.TrimSuffix(cppFiles[0], "."+extension), nil
 }
 
-func Upload(srcFile, destFile string, servers ...*server.Server) error {
+func Upload(srcFile, destFile string, servers ...*models.Server) error {
 	scpCmds := make([]*exec.Cmd, 0, len(servers))
 	for _, server := range servers {
 		scpCmd := exec.Command(
@@ -83,7 +83,7 @@ func Json2File(prefix string, v interface{}) (string, error) {
 	return tmpJsonFile.Name(), nil
 }
 
-func Send(destServer *server.Server, path string, input interface{}, output interface{}) error {
+func Send(destServer *models.Server, path string, input interface{}, output interface{}) error {
 	var err error
 	var response *http.Response
 
@@ -95,7 +95,7 @@ func Send(destServer *server.Server, path string, input interface{}, output inte
 			body = inputReader
 		} else {
 			buf := &bytes.Buffer{}
-			err := json.NewEncoder(buf).Encode(buf)
+			err := json.NewEncoder(buf).Encode(input)
 			if err != nil {
 				return errors.Wrap(err, "post json encode")
 			}
@@ -129,18 +129,18 @@ func Send(destServer *server.Server, path string, input interface{}, output inte
 	return nil
 }
 
-func SendAll(servers []*server.Server, path string, input interface{}, outputs interface{}) error {
+func SendAll(servers []*models.Server, path string, input interface{}, outputs interface{}) error {
 	errChan := make(chan error)
 	for i, srvr := range servers {
-		go func(j int, destServer *server.Server) {
+		go func(j int, destServer *models.Server) {
 			var output interface{}
 			if outputs != nil {
 				if outints, ok := outputs.([]int); ok {
 					output = &outints[j]
 				} else if outstrings, ok := outputs.([]string); ok {
 					output = &outstrings[j]
-				} else if outslicestrings, ok := outputs.([][]string); ok {
-					output = &outslicestrings[j]
+				} else if outslicereports, ok := outputs.([]models.Report); ok {
+					output = &outslicereports[j]
 				}
 			}
 			err := Send(destServer, path, input, output)
@@ -174,8 +174,8 @@ func Nodeid() (int, error) {
 	return nodeid, nil
 }
 
-func ServerList() ([]*server.Server, error) {
-	var servers []*server.Server
+func ServerList() ([]*models.Server, error) {
+	var servers []*models.Server
 
 	serversFile, err := os.Open("servers.json")
 	if err != nil {
@@ -190,4 +190,8 @@ func ServerList() ([]*server.Server, error) {
 	}
 
 	return servers, nil
+}
+
+func FormatDuration(ns int64) string {
+	return fmt.Sprintf("%.1f ms", float64(ns)/1000000)
 }

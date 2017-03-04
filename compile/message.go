@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/matematik7/didcj/inventory/server"
+	"github.com/matematik7/didcj/models"
 	"github.com/pkg/errors"
 )
 
@@ -191,7 +191,7 @@ type data struct {
 	NumberOfNodes int
 }
 
-func GenerateMessageH(servers []*server.Server) error {
+func GenerateMessageH(servers []*models.Server) error {
 	f, err := os.Create("message.h")
 	if err != nil {
 		return errors.Wrap(err, "GenerateMessageH file create")

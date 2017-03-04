@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/matematik7/didcj/inventory/docker"
-	"github.com/matematik7/didcj/inventory/server"
+	"github.com/matematik7/didcj/models"
 )
 
 type Inventory interface {
 	Init() error
 	Start(n int) error
 	Stop() error
-	Get() ([]*server.Server, error)
+	Get() ([]*models.Server, error)
 }
 
 func Init(inventoryType string) (Inventory, error) {

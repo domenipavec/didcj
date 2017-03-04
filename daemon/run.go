@@ -5,25 +5,34 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/matematik7/didcj/config"
+	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/runner"
 	"github.com/matematik7/didcj/utils"
 )
 
 type RunReport struct {
-	Status   int
-	Messages [][]string
+	Status  int
+	Reports []models.Report
 }
 
 func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
-	err := utils.SendAll(d.servers, "/start/", nil, nil)
+	cfg := &config.Config{}
+	err := json.NewDecoder(request.Body).Decode(cfg)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+	request.Body.Close()
+
+	err = utils.SendAll(d.servers, "/start/", cfg, nil)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
 	report := &RunReport{
-		Status:   runner.DONE,
-		Messages: make([][]string, len(d.servers)),
+		Status:  runner.DONE,
+		Reports: make([]models.Report, len(d.servers)),
 	}
 
 	statuses := make([]int, len(d.servers))
@@ -54,7 +63,7 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	err = utils.SendAll(d.servers, "/messages/", nil, report.Messages)
+	err = utils.SendAll(d.servers, "/report/", nil, report.Reports)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}

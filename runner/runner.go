@@ -12,7 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/matematik7/didcj/inventory/server"
+	"github.com/matematik7/didcj/config"
+	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/utils"
 	"github.com/pkg/errors"
 )
@@ -30,9 +31,13 @@ const (
 	ERROR       = 3
 )
 
+const MB = 1024 * 1024
+
 type Runner struct {
 	nodeid  int
-	servers []*server.Server
+	servers []*models.Server
+
+	config *config.Config
 
 	port string
 
@@ -47,8 +52,11 @@ type Runner struct {
 	receiveChannels []chan []byte
 
 	status    int
-	msgs      []string
 	msgsMutex *sync.Mutex
+	report    *models.Report
+
+	startTime    time.Time
+	timeoutTimer *time.Timer
 }
 
 func New() *Runner {
@@ -75,7 +83,8 @@ func (r *Runner) Init() error {
 	return nil
 }
 
-func (r *Runner) Start() {
+func (r *Runner) Start(cfg *config.Config) {
+	r.config = cfg
 	go r.start()
 }
 
@@ -87,19 +96,22 @@ func (r *Runner) Status() int {
 	return r.status
 }
 
-func (r *Runner) Messages() []string {
+func (r *Runner) Report() *models.Report {
 	r.msgsMutex.Lock()
 	defer r.msgsMutex.Unlock()
 
-	return r.msgs
+	return r.report
 }
 
 func (r *Runner) start() {
 	var err error
 
 	r.msgsMutex = &sync.Mutex{}
-	r.msgs = make([]string, 0, 100)
 	r.status = RUNNING
+	r.report = &models.Report{
+		Ip:       r.servers[r.nodeid].Ip.String(),
+		Messages: make([]string, 0, 100),
+	}
 
 	for i := range r.receiveChannels {
 		r.receiveChannels[i] = make(chan []byte, 10)
@@ -144,6 +156,11 @@ func (r *Runner) start() {
 
 	time.Sleep(time.Millisecond * 10)
 
+	r.timeoutTimer = time.AfterFunc(time.Second*time.Duration(r.config.MaxTimeSeconds), func() {
+		r.error(fmt.Errorf("Timeout!"), "runner.start")
+	})
+	r.startTime = time.Now()
+
 	err = r.cmd.Start()
 	if err != nil {
 		r.error(err, "runner.start")
@@ -170,6 +187,10 @@ func (r *Runner) start() {
 				r.stdin.Write(r.formatInt(source))
 				r.stdin.Write(data)
 			} else if buffer[0] == SEND {
+				if r.report.SendCount >= r.config.MaxMsgsPerNode {
+					r.error(fmt.Errorf("Too many msgs!"), "runner.start.send")
+					return
+				}
 				target, err := r.readInt(r.stderr)
 				if err != nil {
 					r.error(err, "runner.start.send")
@@ -179,6 +200,13 @@ func (r *Runner) start() {
 				if err != nil {
 					r.error(err, "runner.start.send")
 					return
+				}
+				if length > r.config.MaxMsgSizeMb*MB {
+					r.error(fmt.Errorf("Msg too big, size: %d", length), "runner.start.send")
+					return
+				}
+				if length > r.report.LargestMsg {
+					r.report.LargestMsg = length
 				}
 				msg := make([]byte, length)
 				_, err = io.ReadFull(r.stderr, msg)
@@ -197,6 +225,7 @@ func (r *Runner) start() {
 				conn.Write(r.formatInt(r.nodeid))
 				conn.Write(msg)
 				conn.Close()
+				r.report.SendCount++
 			} else if buffer[0] == DEBUG {
 				length, err := r.readInt(r.stderr)
 				if err != nil {
@@ -216,6 +245,8 @@ func (r *Runner) start() {
 	}
 
 	err = r.cmd.Wait()
+	r.report.RunTime = time.Now().Sub(r.startTime).Nanoseconds()
+	r.timeoutTimer.Stop()
 	r.status = DONE
 	if err != nil {
 		r.error(err, "runner.start")
@@ -265,7 +296,7 @@ func (r *Runner) debug(msg string) {
 	r.msgsMutex.Lock()
 	defer r.msgsMutex.Unlock()
 
-	r.msgs = append(r.msgs, msg)
+	r.report.Messages = append(r.report.Messages, msg)
 }
 
 func (r *Runner) readInt(reader io.Reader) (int, error) {
