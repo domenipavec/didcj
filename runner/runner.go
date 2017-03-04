@@ -330,7 +330,8 @@ func (r *Runner) handleStdout() {
 		if len(msg) != 0 {
 			r.debug("stdout: " + msg[:len(msg)-1])
 		}
-		if err == io.EOF || err == os.ErrClosed {
+
+		if err != nil && (err == io.EOF || err == os.ErrClosed || err.Error() == "read |0: file already closed") {
 			return
 		} else if err != nil {
 			r.error(err, "handlestdout")
