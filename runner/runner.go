@@ -126,12 +126,12 @@ func (r *Runner) start() {
 		return
 	}
 	defer r.stderr.Close()
+	// stdout is closed in handleStdout
 	r.stdout, err = r.cmd.StdoutPipe()
 	if err != nil {
 		r.error(err, "runner.start")
 		return
 	}
-	defer r.stdout.Close()
 	r.stdin, err = r.cmd.StdinPipe()
 	if err != nil {
 		r.error(err, "runner.start")
@@ -292,6 +292,7 @@ func (r *Runner) formatInt(value int) []byte {
 
 func (r *Runner) handleStdout() {
 	bReader := bufio.NewReader(r.stdout)
+	defer r.stdout.Close()
 	for {
 		msg, err := bReader.ReadString('\n')
 		if len(msg) != 0 {
