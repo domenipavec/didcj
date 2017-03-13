@@ -43,6 +43,8 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 			server.Password,
 			"scp",
 			"-o",
+			"UserKnownHostsFile=/dev/null",
+			"-o",
 			"StrictHostKeyChecking=no",
 			srcFile,
 			fmt.Sprintf("%s@%s:~/%s", server.Username, server.Ip.String(), destFile),
@@ -193,5 +195,21 @@ func ServerList() ([]*models.Server, error) {
 }
 
 func FormatDuration(ns int64) string {
-	return fmt.Sprintf("%.1f ms", float64(ns)/1000000)
+	if ns > 1000*1000*1000 {
+		return fmt.Sprintf("%.1f s", float64(ns)/(1000*1000*1000))
+	} else {
+		return fmt.Sprintf("%.1f ms", float64(ns)/(1000*1000))
+	}
+}
+
+func FormatSize(bytes int) string {
+	if bytes < 1024 {
+		return fmt.Sprintf("%d B", bytes)
+	} else if bytes < 1024*1024 {
+		return fmt.Sprintf("%.1f kB", float64(bytes)/1024)
+	} else if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
+	} else {
+		return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
+	}
 }

@@ -167,6 +167,8 @@ func (r *Runner) start() {
 		return
 	}
 
+	go r.monitorMemory()
+
 	for {
 		buffer := make([]byte, 1)
 		n, err := r.stderr.Read(buffer)
@@ -196,18 +198,20 @@ func (r *Runner) start() {
 					r.error(err, "runner.start.send")
 					return
 				}
+
 				length, err := r.readInt(r.stderr)
 				if err != nil {
 					r.error(err, "runner.start.send")
 					return
 				}
-				if length > r.config.MaxMsgSizeMb*MB {
-					r.error(fmt.Errorf("Msg too big, size: %d", length), "runner.start.send")
-					return
-				}
 				if length > r.report.LargestMsg {
 					r.report.LargestMsg = length
 				}
+				if length > r.config.MaxMsgSizeMb*MB {
+					r.error(fmt.Errorf("Msg too big!"), "runner.start.send")
+					return
+				}
+
 				msg := make([]byte, length)
 				_, err = io.ReadFull(r.stderr, msg)
 				if err != nil {
@@ -337,5 +341,40 @@ func (r *Runner) handleStdout() {
 			r.error(err, "handlestdout")
 			return
 		}
+	}
+}
+
+func (r *Runner) monitorMemory() {
+	fn := fmt.Sprintf("/proc/%d/statm", r.cmd.Process.Pid)
+	var size int
+	var ignored int
+	for {
+		if r.status != RUNNING {
+			return
+		}
+
+		f, err := os.Open(fn)
+		if err != nil {
+			r.error(err, "monitormemory open")
+			return
+		}
+		fmt.Fscanf(f, "%d %d", &ignored, &size)
+		f.Close()
+
+		if size == 0 {
+			return
+		}
+
+		size *= 4 * 1024
+
+		if size > r.report.MaxMemory {
+			r.report.MaxMemory = size
+		}
+		if size > r.config.MaxMemoryMb*MB {
+			r.error(fmt.Errorf("Out of memory!"), "monitormemory")
+			return
+		}
+
+		time.Sleep(time.Millisecond * 100)
 	}
 }

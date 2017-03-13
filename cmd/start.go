@@ -120,6 +120,8 @@ func startDaemon(server *models.Server) {
 			"ssh",
 			"-o",
 			"StrictHostKeyChecking=no",
+			"-o",
+			"UserKnownHostsFile=/dev/null",
 			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
 			"./didcj",
 			"daemon",

@@ -101,18 +101,22 @@ to quickly create a Cobra application.`,
 		}
 
 		maxTime := int64(0)
+		maxMemory := 0
 		for i, report := range report.Reports {
 			if report.RunTime > maxTime {
 				maxTime = report.RunTime
 			}
+			if report.MaxMemory > maxMemory {
+				maxMemory = report.MaxMemory
+			}
 			log.Printf(
-				"Node %d (ip: %s, msgs: %d, largest: %d, time: %s, memory: %d):",
+				"Node %d (ip: %s, msgs: %d, largest: %s, time: %s, memory: %s):",
 				i,
 				report.Ip,
 				report.SendCount,
-				report.LargestMsg,
+				utils.FormatSize(report.LargestMsg),
 				utils.FormatDuration(report.RunTime),
-				report.MaxMemory,
+				utils.FormatSize(report.MaxMemory),
 			)
 			for _, message := range report.Messages {
 				log.Println(message)
@@ -120,9 +124,15 @@ to quickly create a Cobra application.`,
 		}
 
 		if report.Status == runner.DONE {
-			log.Printf("Run successful in %s!", utils.FormatDuration(maxTime))
+			log.Printf("Run successful in %s with %s memory!",
+				utils.FormatDuration(maxTime),
+				utils.FormatSize(maxMemory),
+			)
 		} else {
-			log.Printf("Run failed in %s!", utils.FormatDuration(maxTime))
+			log.Printf("Run failed in %s with %s memory!",
+				utils.FormatDuration(maxTime),
+				utils.FormatSize(maxMemory),
+			)
 		}
 	},
 }
