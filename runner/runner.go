@@ -31,8 +31,6 @@ const (
 	ERROR       = 3
 )
 
-const MB = 1024 * 1024
-
 type Runner struct {
 	nodeid  int
 	servers []*models.Server
@@ -207,7 +205,7 @@ func (r *Runner) start() {
 				if length > r.report.LargestMsg {
 					r.report.LargestMsg = length
 				}
-				if length > r.config.MaxMsgSizeMb*MB {
+				if length > r.config.MaxMsgSize {
 					r.error(fmt.Errorf("Msg too big!"), "runner.start.send")
 					return
 				}
@@ -370,7 +368,7 @@ func (r *Runner) monitorMemory() {
 		if size > r.report.MaxMemory {
 			r.report.MaxMemory = size
 		}
-		if size > r.config.MaxMemoryMb*MB {
+		if size > r.config.MaxMemory {
 			r.error(fmt.Errorf("Out of memory!"), "monitormemory")
 			return
 		}
