@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -211,5 +214,20 @@ func FormatSize(bytes int) string {
 		return fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
 	} else {
 		return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
+	}
+}
+
+func GetHFileFromDownloads(basefilename string) {
+	hFile := basefilename + ".h"
+
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	downloadedHFile := path.Join(usr.HomeDir, "Downloads", hFile)
+	if _, err = os.Stat(downloadedHFile); err == nil {
+		log.Printf("Found new %s file at %s\n", hFile, downloadedHFile)
+		os.Rename(downloadedHFile, hFile)
 	}
 }

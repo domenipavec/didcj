@@ -75,6 +75,8 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		utils.GetHFileFromDownloads(file)
+
 		log.Println("Compiling ...")
 		err = compile.Compile(file)
 		if err != nil {
