@@ -102,6 +102,10 @@ to quickly create a Cobra application.`,
 
 		maxTime := int64(0)
 		maxMemory := 0
+
+		onlyOneNodeMessages := true
+		oneNodeMessages := []string{}
+
 		for i, report := range report.Reports {
 			if report.RunTime > maxTime {
 				maxTime = report.RunTime
@@ -118,8 +122,16 @@ to quickly create a Cobra application.`,
 				utils.FormatDuration(report.RunTime),
 				utils.FormatSize(report.MaxMemory),
 			)
-			for _, message := range report.Messages {
-				log.Println(message)
+			if len(report.Messages) > 0 {
+				for _, message := range report.Messages {
+					log.Println(message)
+				}
+
+				if len(oneNodeMessages) == 0 {
+					oneNodeMessages = report.Messages
+				} else {
+					onlyOneNodeMessages = false
+				}
 			}
 		}
 
@@ -128,6 +140,12 @@ to quickly create a Cobra application.`,
 				utils.FormatDuration(maxTime),
 				utils.FormatSize(maxMemory),
 			)
+			if onlyOneNodeMessages {
+				log.Println("Output from only one node:")
+				for _, message := range oneNodeMessages {
+					log.Println(message)
+				}
+			}
 		} else {
 			log.Printf("Run failed in %s with %s memory!",
 				utils.FormatDuration(maxTime),
