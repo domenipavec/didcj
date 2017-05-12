@@ -62,7 +62,10 @@ your path. It looks for updated .h file in ~/Downloads/`,
 		dcjCmd := exec.Command("dcj.sh", "test", "--source", file+".cpp", "--nodes", strconv.Itoa(LocalNodes))
 		dcjCmd.Stdout = os.Stdout
 		dcjCmd.Stderr = os.Stderr
-		dcjCmd.Run()
+		err = dcjCmd.Run()
+		if err != nil {
+			log.Fatalf("Error running dcj.sh: %v", err)
+		}
 	},
 }
 
