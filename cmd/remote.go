@@ -28,6 +28,7 @@ import (
 	"github.com/matematik7/didcj/compile"
 	"github.com/matematik7/didcj/config"
 	"github.com/matematik7/didcj/daemon"
+	"github.com/matematik7/didcj/generate"
 	"github.com/matematik7/didcj/inventory"
 	"github.com/matematik7/didcj/runner"
 	"github.com/matematik7/didcj/utils"
@@ -65,7 +66,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		err = compile.GenerateMessageH(cfg.NumberOfNodes)
+		err = generate.MessageH(cfg.NumberOfNodes)
 		if err != nil {
 			log.Fatal(err)
 		}

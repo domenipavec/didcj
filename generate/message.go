@@ -1,4 +1,4 @@
-package compile
+package generate
 
 import (
 	"fmt"
@@ -186,11 +186,7 @@ long long GetLL(int source) {
 }
 `
 
-type data struct {
-	NumberOfNodes int
-}
-
-func GenerateMessageH(numberOfNodes int) error {
+func MessageH(numberOfNodes int) error {
 	f, err := os.Create("message.h")
 	if err != nil {
 		return errors.Wrap(err, "GenerateMessageH file create")

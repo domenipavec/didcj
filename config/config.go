@@ -22,6 +22,8 @@ type Config struct {
 	MaxMemoryKb    int `json:"max_memory_kb,omitempty"`
 	MaxMemory      int `json:"max_memory,omitempty"`
 	MaxTimeSeconds int `json:"max_time_seconds"`
+
+	Input []Input `json:"input"`
 }
 
 func Get() (*Config, error) {
