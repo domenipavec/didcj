@@ -33,6 +33,7 @@ import (
 	"github.com/matematik7/didcj/runner"
 	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var RemoteNodes int
@@ -57,7 +58,7 @@ to quickly create a Cobra application.`,
 			cfg.NumberOfNodes = RemoteNodes
 		}
 
-		inv, err := inventory.Init("docker")
+		inv, err := inventory.Init(viper.GetString("inventory"))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -172,6 +173,9 @@ func init() {
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// remoteCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	remoteCmd.PersistentFlags().String("inventory", "docker", "Which node inventory to use (docker, google)")
+	viper.BindPFlag("inventory", remoteCmd.PersistentFlags().Lookup("inventory"))
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:

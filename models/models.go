@@ -12,7 +12,8 @@ type Report struct {
 }
 
 type Server struct {
-	Ip       net.IP
-	Username string
-	Password string
+	Ip        net.IP
+	PrivateIp net.IP
+	Username  string
+	Password  string
 }

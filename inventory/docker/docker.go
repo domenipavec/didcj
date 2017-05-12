@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/matematik7/didcj/models"
+	"github.com/matematik7/didcj/utils"
 )
 
 type Docker struct {
@@ -59,7 +60,7 @@ func (docker *Docker) Start(n int) error {
 	hostConfig := &container.HostConfig{}
 	networkingConfig := &network.NetworkingConfig{}
 	for i := 0; i < n; i++ {
-		name := docker.getName(i)
+		name := utils.GetName(i)
 		container, err := docker.cli.ContainerCreate(
 			docker.ctx,
 			config,
@@ -123,17 +124,14 @@ func (docker *Docker) Get() ([]*models.Server, error) {
 	servers := make([]*models.Server, 0, len(containers))
 	for _, container := range containers {
 		servers = append(servers, &models.Server{
-			Ip:       net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
-			Username: "root",
-			Password: "root",
+			Ip:        net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
+			PrivateIp: net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
+			Username:  "root",
+			Password:  "root",
 		})
 	}
 
 	return servers, nil
-}
-
-func (docker *Docker) getName(i int) string {
-	return fmt.Sprintf("didcj-%d", i)
 }
 
 func (docker *Docker) handleOutput(reader io.ReadCloser) error {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/matematik7/didcj/inventory/docker"
+	"github.com/matematik7/didcj/inventory/google"
 	"github.com/matematik7/didcj/models"
 )
 
@@ -19,6 +20,8 @@ func Init(inventoryType string) (Inventory, error) {
 
 	if inventoryType == "docker" {
 		inv = docker.New()
+	} else if inventoryType == "google" {
+		inv = google.New()
 	} else {
 		return nil, fmt.Errorf("Invalid inventory type")
 	}

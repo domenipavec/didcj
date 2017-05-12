@@ -26,7 +26,7 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 
 	servers := d.servers[:cfg.NumberOfNodes]
 
-	err = utils.SendAll(servers, "/start/", cfg, nil)
+	err = utils.SendAll(servers, "/start/", cfg, nil, true)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -42,7 +42,7 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 	for !done {
 		time.Sleep(time.Millisecond * 250)
 
-		err := utils.SendAll(servers, "/status/", nil, statuses)
+		err := utils.SendAll(servers, "/status/", nil, statuses, true)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
@@ -58,14 +58,14 @@ func (d *Daemon) RunHandler(w http.ResponseWriter, request *http.Request) {
 		}
 
 		if !done && report.Status == runner.ERROR {
-			err := utils.SendAll(servers, "/stop/", nil, nil)
+			err := utils.SendAll(servers, "/stop/", nil, nil, true)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 			}
 		}
 	}
 
-	err = utils.SendAll(servers, "/report/", nil, report.Reports)
+	err = utils.SendAll(servers, "/report/", nil, report.Reports, true)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}

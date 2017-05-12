@@ -88,11 +88,16 @@ func Json2File(prefix string, v interface{}) (string, error) {
 	return tmpJsonFile.Name(), nil
 }
 
-func Send(destServer *models.Server, path string, input interface{}, output interface{}) error {
+func Send(destServer *models.Server, path string, input interface{}, output interface{}, private ...bool) error {
 	var err error
 	var response *http.Response
 
-	url := fmt.Sprintf("http://%s:%s%s", destServer.Ip.String(), config.DaemonPort, path)
+	ip := destServer.Ip.String()
+	if len(private) > 0 {
+		ip = destServer.PrivateIp.String()
+	}
+
+	url := fmt.Sprintf("http://%s:%s%s", ip, config.DaemonPort, path)
 
 	var body io.Reader
 	if input != nil {
@@ -134,7 +139,7 @@ func Send(destServer *models.Server, path string, input interface{}, output inte
 	return nil
 }
 
-func SendAll(servers []*models.Server, path string, input interface{}, outputs interface{}) error {
+func SendAll(servers []*models.Server, path string, input interface{}, outputs interface{}, private ...bool) error {
 	errChan := make(chan error)
 	for i, srvr := range servers {
 		go func(j int, destServer *models.Server) {
@@ -148,7 +153,7 @@ func SendAll(servers []*models.Server, path string, input interface{}, outputs i
 					output = &outslicereports[j]
 				}
 			}
-			err := Send(destServer, path, input, output)
+			err := Send(destServer, path, input, output, private...)
 			errChan <- err
 		}(i, srvr)
 	}
@@ -230,4 +235,8 @@ func GetHFileFromDownloads(basefilename string) {
 		log.Printf("Found new %s file at %s\n", hFile, downloadedHFile)
 		os.Rename(downloadedHFile, hFile)
 	}
+}
+
+func GetName(i int) string {
+	return fmt.Sprintf("didcj-%d", i)
 }

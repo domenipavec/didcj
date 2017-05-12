@@ -217,7 +217,7 @@ func (r *Runner) start() {
 					return
 				}
 				conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s",
-					r.servers[target].Ip.String(),
+					r.servers[target].PrivateIp.String(),
 					r.port,
 				))
 				if err != nil {

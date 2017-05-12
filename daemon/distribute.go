@@ -70,7 +70,7 @@ func (d *Daemon) DistributeHandler(w http.ResponseWriter, request *http.Request)
 		}
 
 		url := fmt.Sprintf("http://%s:%s/distribute/%s/?%s",
-			d.servers[destinations[destId]].Ip.String(),
+			d.servers[destinations[destId]].PrivateIp.String(),
 			config.DaemonPort,
 			filename,
 			values.Encode(),

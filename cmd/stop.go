@@ -25,6 +25,7 @@ import (
 
 	"github.com/matematik7/didcj/inventory"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // stopCmd represents the stop command
@@ -38,7 +39,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		inv, err := inventory.Init("docker")
+		inv, err := inventory.Init(viper.GetString("inventory"))
 		if err != nil {
 			log.Fatal(err)
 		}
