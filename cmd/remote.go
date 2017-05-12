@@ -83,6 +83,12 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		log.Println("Removing message.h")
+		err = os.Remove("message.h")
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		log.Println("Distributing ...")
 		appFile, err := os.Open(file + ".app")
 		if err != nil {
