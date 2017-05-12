@@ -56,7 +56,7 @@ func Get() (*Config, error) {
 			config.MaxMsgSize = config.MaxMsgSizeKb * KB
 			config.MaxMsgSizeKb = 0
 			config.MaxMsgSizeMb = 0
-		} else if config.MaxMemoryMb != 0 {
+		} else if config.MaxMsgSizeMb != 0 {
 			config.MaxMsgSize = config.MaxMsgSizeMb * MB
 			config.MaxMsgSizeKb = 0
 			config.MaxMsgSizeMb = 0
