@@ -221,8 +221,8 @@ func (r *Runner) start() {
 					r.port,
 				))
 				if err != nil {
-					r.error(err, "runner.start.send")
-					return
+					r.debug(errors.Wrap(err, "runner.start.send").Error())
+					continue
 				}
 				conn.Write(r.formatInt(r.nodeid))
 				conn.Write(msg)
