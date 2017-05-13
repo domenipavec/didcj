@@ -289,6 +289,9 @@ func (r *Runner) error(err error, wrap string) {
 		if err != nil {
 			r.debug(fmt.Sprintf("Could not kill process: %v", err))
 		}
+		for _, receiveChannel := range r.receiveChannels {
+			close(receiveChannel)
+		}
 	}
 	r.debug(errors.Wrap(err, wrap).Error())
 	r.status = ERROR
