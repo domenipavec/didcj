@@ -73,6 +73,9 @@ to quickly create a Cobra application.`,
 		}
 		defer os.Remove(serverJsonFile)
 
+		log.Println("Killing didcj")
+		utils.Run(servers, "killall", "-q", "didcj")
+
 		log.Println("Uploading didcj")
 		err = utils.Upload(executable, "didcj", servers...)
 		if err != nil {

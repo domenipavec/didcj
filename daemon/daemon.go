@@ -2,7 +2,9 @@ package daemon
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/matematik7/didcj/config"
@@ -47,8 +49,30 @@ func (d *Daemon) Init() error {
 	r.HandleFunc("/stop/", d.StopHandler)
 	r.HandleFunc("/status/", d.StatusHandler)
 	r.HandleFunc("/report/", d.ReportHandler)
+	r.HandleFunc("/deleteall/{filename}/", d.DeleteAllHandler)
+	r.HandleFunc("/delete/{filename}/", d.DeleteHandler)
 	http.Handle("/", r)
 	return nil
+}
+
+func (d *Daemon) DeleteAllHandler(w http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	filename := vars["filename"]
+
+	err := utils.SendAll(d.servers, fmt.Sprintf("/delete/%s/", filename), nil, nil, true)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+}
+
+func (d *Daemon) DeleteHandler(w http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	filename := vars["filename"]
+
+	err := os.Remove(filename)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
 }
 
 func (d *Daemon) StartHandler(w http.ResponseWriter, request *http.Request) {

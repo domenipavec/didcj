@@ -162,6 +162,12 @@ to quickly create a Cobra application.`,
 				utils.FormatSize(maxMemory),
 			)
 		}
+
+		deleteUrl := fmt.Sprintf("/deleteall/%s.app/", file)
+		err = utils.Send(servers[0], deleteUrl, nil, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

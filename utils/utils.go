@@ -73,6 +73,44 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 	return nil
 }
 
+func Run(servers []*models.Server, params ...string) error {
+	sshCmds := make([]*exec.Cmd, 0, len(servers))
+	for _, server := range servers {
+		allParams := append([]string{
+			"-p",
+			server.Password,
+			"ssh",
+			"-o",
+			"StrictHostKeyChecking=no",
+			"-o",
+			"UserKnownHostsFile=/dev/null",
+			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
+		}, params...)
+
+		cmd := exec.Command(
+			"sshpass",
+			allParams...,
+		)
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Start()
+		if err != nil {
+			return errors.Wrap(err, "Run start")
+		}
+
+		sshCmds = append(sshCmds, cmd)
+	}
+	for _, cmd := range sshCmds {
+		err := cmd.Wait()
+		if err != nil {
+			return errors.Wrap(err, "Run wait")
+		}
+	}
+	return nil
+}
+
 func Json2File(prefix string, v interface{}) (string, error) {
 	tmpJsonFile, err := ioutil.TempFile("", prefix)
 	if err != nil {
