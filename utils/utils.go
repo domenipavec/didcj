@@ -45,6 +45,7 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 			"-p",
 			server.Password,
 			"scp",
+			"-C",
 			"-o",
 			"UserKnownHostsFile=/dev/null",
 			"-o",
@@ -238,5 +239,5 @@ func GetHFileFromDownloads(basefilename string) {
 }
 
 func GetName(i int) string {
-	return fmt.Sprintf("didcj-%d", i)
+	return fmt.Sprintf("didcj-%03d", i)
 }

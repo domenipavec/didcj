@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sort"
 	"time"
 
 	compute "google.golang.org/api/compute/v1"
@@ -16,12 +17,12 @@ import (
 type Google struct {
 	service *compute.Service
 	config  *Config
-	zone    string
+	zones   []string
 }
 
 func New() *Google {
 	return &Google{
-		zone: "europe-west1-d",
+		zones: []string{"europe-west1-d", "us-west1-b", "us-east1-d", "us-east4-c", "us-central1-f"},
 	}
 }
 
@@ -60,10 +61,21 @@ func (g *Google) Start(n int) error {
 		return err
 	}
 
-	machineType := fmt.Sprintf("zones/%s/machineTypes/n1-standard-1", g.zone)
+	runningInstances := make(map[string]bool)
+	g.listInstances(func(page *compute.InstanceList, zone string) error {
+		for _, instance := range page.Items {
+			if instance.Status == "RUNNING" {
+				runningInstances[instance.Name] = true
+				log.Println("Already running", instance.Name)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
 
 	instance := &compute.Instance{
-		MachineType: machineType,
 		Disks: []*compute.AttachedDisk{
 			&compute.AttachedDisk{
 				Boot:       true,
@@ -87,7 +99,15 @@ func (g *Google) Start(n int) error {
 	}
 	for i := 0; i < n; i++ {
 		instance.Name = utils.GetName(i)
-		_, err := g.service.Instances.Insert(g.config.Installed.ProjectID, g.zone, instance).Context(context.Background()).Do()
+		if runningInstances[instance.Name] {
+			continue
+		}
+
+		zone := g.zones[i/23]
+		log.Println("Starting", instance.Name, "in", zone, "...")
+
+		instance.MachineType = fmt.Sprintf("zones/%s/machineTypes/n1-standard-1", zone)
+		_, err := g.service.Instances.Insert(g.config.Installed.ProjectID, zone, instance).Context(context.Background()).Do()
 		if err != nil {
 			return err
 		}
@@ -100,8 +120,7 @@ func (g *Google) Start(n int) error {
 		log.Println("Waiting for instances to start...")
 
 		started = 0
-		req := g.service.Instances.List(g.config.Installed.ProjectID, g.zone)
-		err := req.Pages(context.Background(), func(page *compute.InstanceList) error {
+		g.listInstances(func(page *compute.InstanceList, zone string) error {
 			for _, instance := range page.Items {
 				if instance.Status == "RUNNING" {
 					started++
@@ -118,13 +137,26 @@ func (g *Google) Start(n int) error {
 	return nil
 }
 
+func (g *Google) listInstances(cb func(page *compute.InstanceList, zone string) error) error {
+	for _, zone := range g.zones {
+		req := g.service.Instances.List(g.config.Installed.ProjectID, zone)
+		err := req.Pages(context.Background(), func(page *compute.InstanceList) error {
+			return cb(page, zone)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (g *Google) Stop() error {
 	stillRunning := 0
 
-	req := g.service.Instances.List(g.config.Installed.ProjectID, g.zone)
-	err := req.Pages(context.Background(), func(page *compute.InstanceList) error {
+	err := g.listInstances(func(page *compute.InstanceList, zone string) error {
 		for _, instance := range page.Items {
-			_, err := g.service.Instances.Delete(g.config.Installed.ProjectID, g.zone, instance.Name).Context(context.Background()).Do()
+			_, err := g.service.Instances.Delete(g.config.Installed.ProjectID, zone, instance.Name).Context(context.Background()).Do()
 			if err != nil {
 				return err
 			}
@@ -142,8 +174,7 @@ func (g *Google) Stop() error {
 		log.Println("Waiting for instances to stop...")
 
 		stillRunning = 0
-		req := g.service.Instances.List(g.config.Installed.ProjectID, g.zone)
-		err := req.Pages(context.Background(), func(page *compute.InstanceList) error {
+		err := g.listInstances(func(page *compute.InstanceList, zone string) error {
 			for _, instance := range page.Items {
 				if instance.Status != "TERMINATED" {
 					stillRunning++
@@ -163,10 +194,10 @@ func (g *Google) Stop() error {
 func (g *Google) Get() ([]*models.Server, error) {
 	servers := []*models.Server{}
 
-	req := g.service.Instances.List(g.config.Installed.ProjectID, g.zone)
-	err := req.Pages(context.Background(), func(page *compute.InstanceList) error {
+	err := g.listInstances(func(page *compute.InstanceList, zone string) error {
 		for _, instance := range page.Items {
 			servers = append(servers, &models.Server{
+				Name:      instance.Name,
 				Ip:        net.ParseIP(instance.NetworkInterfaces[0].AccessConfigs[0].NatIP),
 				PrivateIp: net.ParseIP(instance.NetworkInterfaces[0].NetworkIP),
 				Username:  "domen",
@@ -178,6 +209,8 @@ func (g *Google) Get() ([]*models.Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Sort(models.ServerByName(servers))
 
 	return servers, nil
 }

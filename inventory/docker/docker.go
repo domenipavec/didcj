@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"sort"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -124,12 +125,15 @@ func (docker *Docker) Get() ([]*models.Server, error) {
 	servers := make([]*models.Server, 0, len(containers))
 	for _, container := range containers {
 		servers = append(servers, &models.Server{
+			Name:      container.Names[0],
 			Ip:        net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
 			PrivateIp: net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
 			Username:  "root",
 			Password:  "root",
 		})
 	}
+
+	sort.Sort(models.ServerByName(servers))
 
 	return servers, nil
 }

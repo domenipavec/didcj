@@ -12,8 +12,15 @@ type Report struct {
 }
 
 type Server struct {
+	Name      string
 	Ip        net.IP
 	PrivateIp net.IP
 	Username  string
 	Password  string
 }
+
+type ServerByName []*Server
+
+func (s ServerByName) Len() int           { return len(s) }
+func (s ServerByName) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s ServerByName) Less(i, j int) bool { return s[i].Name < s[j].Name }
