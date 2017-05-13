@@ -50,6 +50,8 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 			"UserKnownHostsFile=/dev/null",
 			"-o",
 			"StrictHostKeyChecking=no",
+			"-o",
+			"LogLevel=ERROR",
 			srcFile,
 			fmt.Sprintf("%s@%s:~/%s", server.Username, server.Ip.String(), destFile),
 		)
@@ -84,6 +86,8 @@ func Run(servers []*models.Server, params ...string) error {
 			"StrictHostKeyChecking=no",
 			"-o",
 			"UserKnownHostsFile=/dev/null",
+			"-o",
+			"LogLevel=ERROR",
 			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
 		}, params...)
 

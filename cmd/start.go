@@ -126,6 +126,8 @@ func startDaemon(server *models.Server) {
 			"StrictHostKeyChecking=no",
 			"-o",
 			"UserKnownHostsFile=/dev/null",
+			"-o",
+			"LogLevel=ERROR",
 			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
 			"./didcj",
 			"daemon",
