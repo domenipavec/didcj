@@ -47,6 +47,7 @@ type Runner struct {
 
 	tcpListener net.Listener
 
+	stopReceive     chan bool
 	receiveChannels []chan []byte
 
 	status    int
@@ -114,6 +115,7 @@ func (r *Runner) start() {
 	for i := range r.receiveChannels {
 		r.receiveChannels[i] = make(chan []byte, 10)
 	}
+	r.stopReceive = make(chan bool, 10)
 
 	r.tcpListener, err = net.Listen("tcp", fmt.Sprintf(":%s", r.port))
 	if err != nil {
@@ -182,10 +184,14 @@ func (r *Runner) start() {
 					r.error(err, "runner.start.receive")
 					return
 				}
-				data := <-r.receiveChannels[source]
-				r.stdin.Write(r.formatInt(len(data)))
-				r.stdin.Write(r.formatInt(source))
-				r.stdin.Write(data)
+				select {
+				case data := <-r.receiveChannels[source]:
+					r.stdin.Write(r.formatInt(len(data)))
+					r.stdin.Write(r.formatInt(source))
+					r.stdin.Write(data)
+				case <-r.stopReceive:
+					continue
+				}
 			} else if buffer[0] == SEND {
 				if r.report.SendCount >= r.config.MaxMsgsPerNode {
 					r.error(fmt.Errorf("Too many msgs!"), "runner.start.send")
@@ -289,9 +295,7 @@ func (r *Runner) error(err error, wrap string) {
 		if err != nil {
 			r.debug(fmt.Sprintf("Could not kill process: %v", err))
 		}
-		for _, receiveChannel := range r.receiveChannels {
-			close(receiveChannel)
-		}
+		r.stopReceive <- true
 	}
 	r.debug(errors.Wrap(err, wrap).Error())
 	r.status = ERROR
