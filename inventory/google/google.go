@@ -15,14 +15,16 @@ import (
 )
 
 type Google struct {
-	service *compute.Service
-	config  *Config
-	zones   []string
+	service      *compute.Service
+	config       *Config
+	zones        []string
+	nodesPerZone int
 }
 
 func New() *Google {
 	return &Google{
-		zones: []string{"europe-west1-d", "us-west1-b", "us-east1-d", "us-east4-c", "us-central1-f"},
+		zones:        []string{"europe-west1-d", "us-east1-b", "us-west1-b", "us-east4-c", "us-central1-f"},
+		nodesPerZone: 69,
 	}
 }
 
@@ -103,7 +105,7 @@ func (g *Google) Start(n int) error {
 			continue
 		}
 
-		zone := g.zones[i/23]
+		zone := g.zones[i/g.nodesPerZone]
 		log.Println("Starting", instance.Name, "in", zone, "...")
 
 		instance.MachineType = fmt.Sprintf("zones/%s/machineTypes/n1-standard-1", zone)
