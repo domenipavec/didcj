@@ -1,3 +1,6 @@
+#ifndef MESSAGE_H
+#define MESSAGE_H
+
 #include <assert.h>
 #include <fstream>
 #include <stdlib.h>
@@ -174,3 +177,5 @@ long long GetLL(int source) {
 	}
 	return result;
 }
+
+#endif
