@@ -27,6 +27,8 @@ var SSHParams = []string{
 	"StrictHostKeyChecking=no",
 	"-o",
 	"LogLevel=ERROR",
+	"-o",
+	"ForwardAgent=yes",
 }
 
 func FindFileBasename(extension string) (string, error) {
@@ -47,35 +49,45 @@ func FindFileBasename(extension string) (string, error) {
 }
 
 func Upload(srcFile, destFile string, servers ...*models.Server) error {
-	scpCmds := make([]*exec.Cmd, 0, len(servers))
-	for _, server := range servers {
-		allParams := append(SSHParams,
-			"-C", // compression
-			"-q", // no progress bar
-			srcFile,
-			fmt.Sprintf("%s@%s:~/%s", server.Username, server.Ip.String(), destFile),
-		)
-		scpCmd := exec.Command(
-			"scp",
-			allParams...,
-		)
-
-		scpCmd.Stdout = os.Stdout
-		scpCmd.Stderr = os.Stderr
-
-		err := scpCmd.Start()
-		if err != nil {
-			return errors.Wrap(err, "Upload start")
-		}
-
-		scpCmds = append(scpCmds, scpCmd)
+	if len(servers) == 0 {
+		return nil
 	}
-	for _, scpCmd := range scpCmds {
-		err := scpCmd.Wait()
-		if err != nil {
-			return errors.Wrap(err, "Upload wait")
-		}
+
+	allParams := append(SSHParams,
+		"-C", // compression
+		"-q", // no progress bar
+		srcFile,
+		fmt.Sprintf("%s@%s:~/%s", servers[0].Username, servers[0].Ip.String(), destFile),
+	)
+	scpCmd := exec.Command(
+		"scp",
+		allParams...,
+	)
+
+	scpCmd.Stdout = os.Stdout
+	scpCmd.Stderr = os.Stderr
+
+	err := scpCmd.Run()
+	if err != nil {
+		return errors.Wrap(err, "could not upload")
 	}
+
+	if len(servers) > 1 {
+		allUploads := []string{}
+		for _, server := range servers[1:] {
+			allUploads = append(allUploads, "scp")
+			allUploads = append(allUploads, SSHParams...)
+			allUploads = append(allUploads,
+				"-q",
+				destFile,
+				fmt.Sprintf("%s@%s:~/%s", server.Username, server.PrivateIp.String(), destFile),
+				"&",
+			)
+		}
+		allUploads = append(allUploads, "wait")
+		Run(servers[:1], allUploads...)
+	}
+
 	return nil
 }
 
