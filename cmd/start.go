@@ -36,6 +36,7 @@ import (
 )
 
 var StartNodes int
+var StartDaemonOnly bool
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -52,9 +53,12 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = inv.Start(StartNodes)
-		if err != nil {
-			log.Fatal(err)
+
+		if !StartDaemonOnly {
+			err = inv.Start(StartNodes)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		servers, err := inv.Get()
@@ -62,49 +66,51 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		executable, err := os.Executable()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		serverJSONFile, err := utils.JSON2File("servers", servers)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer os.Remove(serverJSONFile)
-
 		log.Println("Killing didcj")
 		utils.Run(servers, "killall", "-q", "didcj")
 
-		log.Println("Uploading didcj")
-		err = utils.Upload(executable, "didcj", servers...)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println("Uploading servers.json")
-		err = utils.Upload(serverJSONFile, "servers.json", servers...)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println("Uploading nodeid")
-		tmpFile, err := ioutil.TempFile("", "nodeid")
-		if err != nil {
-			log.Fatal(err)
-		}
-		for i, server := range servers {
-			_, err = tmpFile.WriteAt([]byte(strconv.Itoa(i)), 0)
+		if !StartDaemonOnly {
+			executable, err := os.Executable()
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = utils.Upload(tmpFile.Name(), "nodeid", server)
+
+			serverJSONFile, err := utils.JSON2File("servers", servers)
 			if err != nil {
 				log.Fatal(err)
 			}
+			defer os.Remove(serverJSONFile)
+
+			log.Println("Uploading didcj")
+			err = utils.Upload(executable, "didcj", servers...)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			log.Println("Uploading servers.json")
+			err = utils.Upload(serverJSONFile, "servers.json", servers...)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			log.Println("Uploading nodeid")
+			tmpFile, err := ioutil.TempFile("", "nodeid")
+			if err != nil {
+				log.Fatal(err)
+			}
+			for i, server := range servers {
+				_, err = tmpFile.WriteAt([]byte(strconv.Itoa(i)), 0)
+				if err != nil {
+					log.Fatal(err)
+				}
+				err = utils.Upload(tmpFile.Name(), "nodeid", server)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			tmpFile.Close()
+			os.Remove(tmpFile.Name())
 		}
-		tmpFile.Close()
-		os.Remove(tmpFile.Name())
 
 		log.Println("Starting daemon")
 		for _, server := range servers {
@@ -153,4 +159,5 @@ func init() {
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	startCmd.Flags().IntVar(&StartNodes, "nodes", 100, "Number of remote nodes")
+	startCmd.Flags().BoolVar(&StartDaemonOnly, "daemon", false, "Only start daemon")
 }
