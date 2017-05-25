@@ -203,7 +203,6 @@ func (g *Google) Get() ([]*models.Server, error) {
 				Ip:        net.ParseIP(instance.NetworkInterfaces[0].AccessConfigs[0].NatIP),
 				PrivateIp: net.ParseIP(instance.NetworkInterfaces[0].NetworkIP),
 				Username:  "domen",
-				Password:  "",
 			})
 		}
 		return nil

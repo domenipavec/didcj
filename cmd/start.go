@@ -67,11 +67,11 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		serverJsonFile, err := utils.Json2File("servers", servers)
+		serverJSONFile, err := utils.JSON2File("servers", servers)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer os.Remove(serverJsonFile)
+		defer os.Remove(serverJSONFile)
 
 		log.Println("Killing didcj")
 		utils.Run(servers, "killall", "-q", "didcj")
@@ -83,7 +83,7 @@ to quickly create a Cobra application.`,
 		}
 
 		log.Println("Uploading servers.json")
-		err = utils.Upload(serverJsonFile, "servers.json", servers...)
+		err = utils.Upload(serverJSONFile, "servers.json", servers...)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -117,20 +117,14 @@ to quickly create a Cobra application.`,
 
 func startDaemon(server *models.Server) {
 	for {
-		cmd := exec.Command(
-			"sshpass",
-			"-p",
-			server.Password,
-			"ssh",
-			"-o",
-			"StrictHostKeyChecking=no",
-			"-o",
-			"UserKnownHostsFile=/dev/null",
-			"-o",
-			"LogLevel=ERROR",
+		allParams := append(utils.SSHParams,
 			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
 			"./didcj",
 			"daemon",
+		)
+		cmd := exec.Command(
+			"ssh",
+			allParams...,
 		)
 
 		cmd.Stdout = os.Stdout

@@ -20,6 +20,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+var SSHParams = []string{
+	"-o",
+	"UserKnownHostsFile=/dev/null",
+	"-o",
+	"StrictHostKeyChecking=no",
+	"-o",
+	"LogLevel=ERROR",
+}
+
 func FindFileBasename(extension string) (string, error) {
 	cppFiles, err := filepath.Glob("*." + extension)
 	if err != nil {
@@ -27,11 +36,11 @@ func FindFileBasename(extension string) (string, error) {
 	}
 
 	if len(cppFiles) < 1 {
-		return "", fmt.Errorf("No .%s files found!", extension)
+		return "", fmt.Errorf("no .%s files found", extension)
 	}
 
 	if len(cppFiles) > 1 {
-		return "", fmt.Errorf("More than 1 .%s file found!", extension)
+		return "", fmt.Errorf("more than 1 .%s file found", extension)
 	}
 
 	return strings.TrimSuffix(cppFiles[0], "."+extension), nil
@@ -40,20 +49,15 @@ func FindFileBasename(extension string) (string, error) {
 func Upload(srcFile, destFile string, servers ...*models.Server) error {
 	scpCmds := make([]*exec.Cmd, 0, len(servers))
 	for _, server := range servers {
-		scpCmd := exec.Command(
-			"sshpass",
-			"-p",
-			server.Password,
-			"scp",
-			"-C",
-			"-o",
-			"UserKnownHostsFile=/dev/null",
-			"-o",
-			"StrictHostKeyChecking=no",
-			"-o",
-			"LogLevel=ERROR",
+		allParams := append(SSHParams,
+			"-C", // compression
+			"-q", // no progress bar
 			srcFile,
 			fmt.Sprintf("%s@%s:~/%s", server.Username, server.Ip.String(), destFile),
+		)
+		scpCmd := exec.Command(
+			"scp",
+			allParams...,
 		)
 
 		scpCmd.Stdout = os.Stdout
@@ -78,21 +82,13 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 func Run(servers []*models.Server, params ...string) error {
 	sshCmds := make([]*exec.Cmd, 0, len(servers))
 	for _, server := range servers {
-		allParams := append([]string{
-			"-p",
-			server.Password,
-			"ssh",
-			"-o",
-			"StrictHostKeyChecking=no",
-			"-o",
-			"UserKnownHostsFile=/dev/null",
-			"-o",
-			"LogLevel=ERROR",
+		allParams := append(SSHParams,
 			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
-		}, params...)
+		)
+		allParams = append(allParams, params...)
 
 		cmd := exec.Command(
-			"sshpass",
+			"ssh",
 			allParams...,
 		)
 
@@ -115,20 +111,20 @@ func Run(servers []*models.Server, params ...string) error {
 	return nil
 }
 
-func Json2File(prefix string, v interface{}) (string, error) {
-	tmpJsonFile, err := ioutil.TempFile("", prefix)
+func JSON2File(prefix string, v interface{}) (string, error) {
+	tmpJSONFile, err := ioutil.TempFile("", prefix)
 	if err != nil {
 		return "", errors.Wrap(err, "Json2File temp file")
 	}
 
-	encoder := json.NewEncoder(tmpJsonFile)
+	encoder := json.NewEncoder(tmpJSONFile)
 	err = encoder.Encode(v)
 	if err != nil {
 		return "", errors.Wrap(err, "Json2File json encode")
 	}
-	tmpJsonFile.Close()
+	tmpJSONFile.Close()
 
-	return tmpJsonFile.Name(), nil
+	return tmpJSONFile.Name(), nil
 }
 
 func Send(destServer *models.Server, path string, input interface{}, output interface{}, private ...bool) error {
@@ -148,7 +144,7 @@ func Send(destServer *models.Server, path string, input interface{}, output inte
 			body = inputReader
 		} else {
 			buf := &bytes.Buffer{}
-			err := json.NewEncoder(buf).Encode(input)
+			err = json.NewEncoder(buf).Encode(input)
 			if err != nil {
 				return errors.Wrap(err, "post json encode")
 			}
@@ -165,7 +161,8 @@ func Send(destServer *models.Server, path string, input interface{}, output inte
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
-		errMsg, err := ioutil.ReadAll(response.Body)
+		var errMsg []byte
+		errMsg, err = ioutil.ReadAll(response.Body)
 		if err != nil {
 			return errors.Wrap(err, "Post read error")
 		}
@@ -248,9 +245,8 @@ func ServerList() ([]*models.Server, error) {
 func FormatDuration(ns int64) string {
 	if ns > 1000*1000*1000 {
 		return fmt.Sprintf("%.1f s", float64(ns)/(1000*1000*1000))
-	} else {
-		return fmt.Sprintf("%.1f ms", float64(ns)/(1000*1000))
 	}
+	return fmt.Sprintf("%.1f ms", float64(ns)/(1000*1000))
 }
 
 func FormatSize(bytes int) string {
@@ -260,9 +256,8 @@ func FormatSize(bytes int) string {
 		return fmt.Sprintf("%.1f kB", float64(bytes)/1024)
 	} else if bytes < 1024*1024*1024 {
 		return fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
-	} else {
-		return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
 	}
+	return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
 }
 
 func GetHFileFromDownloads(basefilename string) {

@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/utils"
+	"github.com/pkg/errors"
 )
 
 type Docker struct {
@@ -27,7 +28,7 @@ type Docker struct {
 
 func New() *Docker {
 	return &Docker{
-		image: "rastasheep/ubuntu-sshd:16.04",
+		image: "matematik7/didcj",
 	}
 }
 
@@ -44,13 +45,25 @@ func (docker *Docker) Init() error {
 }
 
 func (docker *Docker) Start(n int) error {
-	reader, err := docker.cli.ImagePull(docker.ctx, docker.image, types.ImagePullOptions{})
+	filters, err := filters.ParseFlag(fmt.Sprintf("reference=%s", docker.image), filters.NewArgs())
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "could not parse image filter params")
 	}
-	err = docker.handleOutput(reader)
+	imgs, err := docker.cli.ImageList(docker.ctx, types.ImageListOptions{
+		Filters: filters,
+	})
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "could not list images")
+	}
+	if len(imgs) <= 0 {
+		reader, err := docker.cli.ImagePull(docker.ctx, docker.image, types.ImagePullOptions{})
+		if err != nil {
+			return errors.Wrap(err, "could not pull image")
+		}
+		err = docker.handleOutput(reader)
+		if err != nil {
+			return errors.Wrap(err, "could not handle output pull image")
+		}
 	}
 
 	config := &container.Config{
@@ -129,7 +142,6 @@ func (docker *Docker) Get() ([]*models.Server, error) {
 			Ip:        net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
 			PrivateIp: net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
 			Username:  "root",
-			Password:  "root",
 		})
 	}
 

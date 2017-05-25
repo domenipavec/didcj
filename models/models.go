@@ -16,7 +16,6 @@ type Server struct {
 	Ip        net.IP
 	PrivateIp net.IP
 	Username  string
-	Password  string
 }
 
 type ServerByName []*Server
