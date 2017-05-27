@@ -18,6 +18,7 @@ static const int MAX_MESSAGE_SIZE = (8 * (1 << 20));
 static const char SEND = 0;
 static const char RECEIVE = 1;
 static const char DEBUG = 2;
+static const char NODEID = 3;
 static buffer incoming_buffers[MAX_MACHINES];
 static buffer outgoing_buffers[MAX_MACHINES];
 
@@ -29,6 +30,10 @@ void fputint(int value, FILE * out) {
 	for (int i = 0; i < 4; i++) {
 		fputc((0xff & (value >> (8*i))), out);
 	}
+}
+
+void freadint(int *value, FILE * in) {
+	while (fread(value, 4, 1, in) < 1);
 }
 
 void Debug(const char *s) {
@@ -61,8 +66,9 @@ static inline void checkNodeId(int node) {
 int MyNodeId() {
 	static int id = -1;
 	if (id == -1) {
-		std::fstream node_id_file("nodeid", std::ios_base::in);
-		node_id_file >> id;
+		fputc(NODEID, stderr);
+		fflush(stderr);
+		freadint(&id, stdin);
 	}
 	return id;
 }
@@ -104,10 +110,6 @@ void Send(int target) {
 	buf->buf = NULL;
 	buf->pos = 0;
 	buf->size = 0;
-}
-
-void freadint(int *value, FILE * in) {
-	while (fread(value, 4, 1, in) < 1);
 }
 
 int Receive(int source) {

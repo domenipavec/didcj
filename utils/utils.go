@@ -204,22 +204,6 @@ func SendAll(servers []*models.Server, path string, input interface{}, outputs i
 	return nil
 }
 
-func Nodeid() (int, error) {
-	nodeidFile, err := os.Open("nodeid")
-	if err != nil {
-		return 0, errors.Wrap(err, "Runner.Init open nodeid")
-	}
-	defer nodeidFile.Close()
-
-	var nodeid int
-	_, err = fmt.Fscanf(nodeidFile, "%d", &nodeid)
-	if err != nil {
-		return 0, errors.Wrap(err, "Runner.Init fscanf nodeid")
-	}
-
-	return nodeid, nil
-}
-
 func FormatDuration(ns int64) string {
 	if ns > 1000*1000*1000 {
 		return fmt.Sprintf("%.1f s", float64(ns)/(1000*1000*1000))

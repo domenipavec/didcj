@@ -22,11 +22,9 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"strconv"
 
 	"github.com/matematik7/didcj/inventory"
 	"github.com/matematik7/didcj/models"
@@ -80,24 +78,6 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			log.Println("Uploading nodeid")
-			tmpFile, err := ioutil.TempFile("", "nodeid")
-			if err != nil {
-				log.Fatal(err)
-			}
-			for i, server := range servers {
-				_, err = tmpFile.WriteAt([]byte(strconv.Itoa(i)), 0)
-				if err != nil {
-					log.Fatal(err)
-				}
-				err = utils.Upload(tmpFile.Name(), "nodeid", server)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			tmpFile.Close()
-			os.Remove(tmpFile.Name())
 		}
 
 		log.Println("Starting daemon")

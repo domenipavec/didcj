@@ -8,12 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/matematik7/didcj/config"
 	"github.com/matematik7/didcj/runner"
-	"github.com/matematik7/didcj/utils"
 	"github.com/pkg/errors"
 )
 
 type Daemon struct {
-	nodeid int
 	runner *runner.Runner
 }
 
@@ -25,11 +23,6 @@ func New() *Daemon {
 
 func (d *Daemon) Init() error {
 	err := d.runner.Init()
-	if err != nil {
-		return errors.Wrap(err, "daemon.init")
-	}
-
-	d.nodeid, err = utils.Nodeid()
 	if err != nil {
 		return errors.Wrap(err, "daemon.init")
 	}

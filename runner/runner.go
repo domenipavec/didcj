@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +23,7 @@ const (
 	SEND    = 0
 	RECEIVE = 1
 	DEBUG   = 2
+	NODEID  = 3
 )
 
 const (
@@ -32,8 +34,6 @@ const (
 )
 
 type Runner struct {
-	nodeid int
-
 	config *config.Config
 
 	port string
@@ -64,13 +64,6 @@ func New() *Runner {
 }
 
 func (r *Runner) Init() error {
-	var err error
-
-	r.nodeid, err = utils.Nodeid()
-	if err != nil {
-		return errors.Wrap(err, "runner.init")
-	}
-
 	return nil
 }
 
@@ -100,7 +93,6 @@ func (r *Runner) start() {
 	r.msgsMutex = &sync.Mutex{}
 	r.status = RUNNING
 	r.report = &models.Report{
-		Name:     r.config.Servers[r.nodeid].Name,
 		Messages: make([]string, 0, 100),
 	}
 
@@ -109,6 +101,30 @@ func (r *Runner) start() {
 		r.receiveChannels[i] = make(chan []byte, 10)
 	}
 	r.stopReceive = make(chan bool, 10)
+
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		r.error(err, "could not get interface addresses")
+	}
+	nodeid := -1
+	for i, server := range r.config.Servers {
+		for _, addr := range addresses {
+			addrString := strings.Split(addr.String(), "/")[0]
+			if server.IP.String() == addrString {
+				nodeid = i
+				break
+			}
+			if server.PrivateIP.String() == addrString {
+				nodeid = i
+				break
+			}
+		}
+	}
+	if nodeid == -1 {
+		r.error(fmt.Errorf("could not find nodeid"), "")
+		return
+	}
+	r.report.Name = r.config.Servers[nodeid].Name
 
 	r.tcpListener, err = net.Listen("tcp", fmt.Sprintf(":%s", r.port))
 	if err != nil {
@@ -224,7 +240,7 @@ func (r *Runner) start() {
 					r.debug(errors.Wrap(err, "runner.start.send").Error())
 					continue
 				}
-				conn.Write(r.formatInt(r.nodeid))
+				conn.Write(r.formatInt(nodeid))
 				conn.Write(msg)
 				conn.Close()
 				r.report.SendCount++
@@ -240,6 +256,8 @@ func (r *Runner) start() {
 					r.error(err, "runner.start.debug")
 				}
 				r.debug(string(msg))
+			} else if buffer[0] == NODEID {
+				r.stdin.Write(r.formatInt(nodeid))
 			} else {
 				r.error(fmt.Errorf("Invalid buffer: %v", buffer), "runner.start")
 			}
