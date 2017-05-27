@@ -200,8 +200,8 @@ func (g *Google) Get() ([]*models.Server, error) {
 		for _, instance := range page.Items {
 			servers = append(servers, &models.Server{
 				Name:      instance.Name,
-				Ip:        net.ParseIP(instance.NetworkInterfaces[0].AccessConfigs[0].NatIP),
-				PrivateIp: net.ParseIP(instance.NetworkInterfaces[0].NetworkIP),
+				IP:        net.ParseIP(instance.NetworkInterfaces[0].AccessConfigs[0].NatIP),
+				PrivateIP: net.ParseIP(instance.NetworkInterfaces[0].NetworkIP),
 				Username:  "domen",
 			})
 		}

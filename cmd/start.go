@@ -75,20 +75,8 @@ to quickly create a Cobra application.`,
 				log.Fatal(err)
 			}
 
-			serverJSONFile, err := utils.JSON2File("servers", servers)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer os.Remove(serverJSONFile)
-
 			log.Println("Uploading didcj")
 			err = utils.Upload(executable, "didcj", servers...)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Println("Uploading servers.json")
-			err = utils.Upload(serverJSONFile, "servers.json", servers...)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -124,7 +112,7 @@ to quickly create a Cobra application.`,
 func startDaemon(server *models.Server) {
 	for {
 		allParams := append(utils.SSHParams,
-			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
+			fmt.Sprintf("%s@%s", server.Username, server.IP.String()),
 			"./didcj",
 			"daemon",
 		)
@@ -141,7 +129,7 @@ func startDaemon(server *models.Server) {
 			log.Println(err)
 		}
 
-		log.Printf("Restarting daemon on %s", server.Ip.String())
+		log.Printf("Restarting daemon on %s", server.Name)
 	}
 }
 

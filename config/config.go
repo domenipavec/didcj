@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/matematik7/didcj/models"
 	"github.com/pkg/errors"
 )
 
@@ -24,6 +25,8 @@ type Config struct {
 	MaxTimeSeconds int `json:"max_time_seconds"`
 
 	Input []Input `json:"input"`
+
+	Servers []*models.Server `json:"servers"`
 }
 
 func Get() (*Config, error) {

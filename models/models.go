@@ -3,7 +3,7 @@ package models
 import "net"
 
 type Report struct {
-	Ip         string   `json:"ip"`
+	Name       string   `json:"ip"`
 	Messages   []string `json:"messages"`
 	SendCount  int      `json:"send_count"`
 	LargestMsg int      `json:"largest_msg"`
@@ -12,10 +12,10 @@ type Report struct {
 }
 
 type Server struct {
-	Name      string
-	Ip        net.IP
-	PrivateIp net.IP
-	Username  string
+	Name      string `json:"name"`
+	IP        net.IP `json:"ip"`
+	PrivateIP net.IP `json:"private_ip"`
+	Username  string `json:"username"`
 }
 
 type ServerByName []*Server

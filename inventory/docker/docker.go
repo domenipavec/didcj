@@ -139,8 +139,8 @@ func (docker *Docker) Get() ([]*models.Server, error) {
 	for _, container := range containers {
 		servers = append(servers, &models.Server{
 			Name:      container.Names[0],
-			Ip:        net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
-			PrivateIp: net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
+			IP:        net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
+			PrivateIP: net.ParseIP(container.NetworkSettings.Networks["bridge"].IPAddress),
 			Username:  "root",
 		})
 	}

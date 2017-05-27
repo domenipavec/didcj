@@ -2,22 +2,19 @@ package daemon
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/matematik7/didcj/config"
-	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/runner"
 	"github.com/matematik7/didcj/utils"
 	"github.com/pkg/errors"
 )
 
 type Daemon struct {
-	servers []*models.Server
-	nodeid  int
-	runner  *runner.Runner
+	nodeid int
+	runner *runner.Runner
 }
 
 func New() *Daemon {
@@ -37,32 +34,15 @@ func (d *Daemon) Init() error {
 		return errors.Wrap(err, "daemon.init")
 	}
 
-	d.servers, err = utils.ServerList()
-	if err != nil {
-		return errors.Wrap(err, "daemon.init")
-	}
-
 	r := mux.NewRouter()
-	r.HandleFunc("/distribute/{filename}/", d.DistributeHandler)
 	r.HandleFunc("/run/", d.RunHandler)
 	r.HandleFunc("/start/", d.StartHandler)
 	r.HandleFunc("/stop/", d.StopHandler)
 	r.HandleFunc("/status/", d.StatusHandler)
 	r.HandleFunc("/report/", d.ReportHandler)
-	r.HandleFunc("/deleteall/{filename}/", d.DeleteAllHandler)
 	r.HandleFunc("/delete/{filename}/", d.DeleteHandler)
 	http.Handle("/", r)
 	return nil
-}
-
-func (d *Daemon) DeleteAllHandler(w http.ResponseWriter, request *http.Request) {
-	vars := mux.Vars(request)
-	filename := vars["filename"]
-
-	err := utils.SendAll(d.servers, fmt.Sprintf("/delete/%s/", filename), nil, nil, true)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-	}
 }
 
 func (d *Daemon) DeleteHandler(w http.ResponseWriter, request *http.Request) {

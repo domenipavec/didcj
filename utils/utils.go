@@ -57,7 +57,7 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 		"-C", // compression
 		"-q", // no progress bar
 		srcFile,
-		fmt.Sprintf("%s@%s:~/%s", servers[0].Username, servers[0].Ip.String(), destFile),
+		fmt.Sprintf("%s@%s:~/%s", servers[0].Username, servers[0].IP.String(), destFile),
 	)
 	scpCmd := exec.Command(
 		"scp",
@@ -80,7 +80,7 @@ func Upload(srcFile, destFile string, servers ...*models.Server) error {
 			allUploads = append(allUploads,
 				"-q",
 				destFile,
-				fmt.Sprintf("%s@%s:~/%s", server.Username, server.PrivateIp.String(), destFile),
+				fmt.Sprintf("%s@%s:~/%s", server.Username, server.PrivateIP.String(), destFile),
 				"&",
 			)
 		}
@@ -95,7 +95,7 @@ func Run(servers []*models.Server, params ...string) error {
 	sshCmds := make([]*exec.Cmd, 0, len(servers))
 	for _, server := range servers {
 		allParams := append(SSHParams,
-			fmt.Sprintf("%s@%s", server.Username, server.Ip.String()),
+			fmt.Sprintf("%s@%s", server.Username, server.IP.String()),
 		)
 		allParams = append(allParams, params...)
 
@@ -123,29 +123,13 @@ func Run(servers []*models.Server, params ...string) error {
 	return nil
 }
 
-func JSON2File(prefix string, v interface{}) (string, error) {
-	tmpJSONFile, err := ioutil.TempFile("", prefix)
-	if err != nil {
-		return "", errors.Wrap(err, "Json2File temp file")
-	}
-
-	encoder := json.NewEncoder(tmpJSONFile)
-	err = encoder.Encode(v)
-	if err != nil {
-		return "", errors.Wrap(err, "Json2File json encode")
-	}
-	tmpJSONFile.Close()
-
-	return tmpJSONFile.Name(), nil
-}
-
 func Send(destServer *models.Server, path string, input interface{}, output interface{}, private ...bool) error {
 	var err error
 	var response *http.Response
 
-	ip := destServer.Ip.String()
+	ip := destServer.IP.String()
 	if len(private) > 0 {
-		ip = destServer.PrivateIp.String()
+		ip = destServer.PrivateIP.String()
 	}
 
 	url := fmt.Sprintf("http://%s:%s%s", ip, config.DaemonPort, path)
@@ -213,7 +197,7 @@ func SendAll(servers []*models.Server, path string, input interface{}, outputs i
 	for _, server := range servers {
 		err := <-errChan
 		if err != nil {
-			return errors.Wrap(err, server.Ip.String())
+			return errors.Wrap(err, server.Name)
 		}
 	}
 
@@ -234,24 +218,6 @@ func Nodeid() (int, error) {
 	}
 
 	return nodeid, nil
-}
-
-func ServerList() ([]*models.Server, error) {
-	var servers []*models.Server
-
-	serversFile, err := os.Open("servers.json")
-	if err != nil {
-		return nil, errors.Wrap(err, "serverlist servers.json open")
-	}
-	defer serversFile.Close()
-
-	serversDecoder := json.NewDecoder(serversFile)
-	err = serversDecoder.Decode(&servers)
-	if err != nil {
-		return nil, errors.Wrap(err, "serverlist servers.json decode")
-	}
-
-	return servers, nil
 }
 
 func FormatDuration(ns int64) string {

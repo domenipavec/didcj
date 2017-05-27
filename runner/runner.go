@@ -32,8 +32,7 @@ const (
 )
 
 type Runner struct {
-	nodeid  int
-	servers []*models.Server
+	nodeid int
 
 	config *config.Config
 
@@ -72,13 +71,6 @@ func (r *Runner) Init() error {
 		return errors.Wrap(err, "runner.init")
 	}
 
-	r.servers, err = utils.ServerList()
-	if err != nil {
-		return errors.Wrap(err, "runner.init")
-	}
-
-	r.receiveChannels = make([]chan []byte, len(r.servers))
-
 	return nil
 }
 
@@ -108,10 +100,11 @@ func (r *Runner) start() {
 	r.msgsMutex = &sync.Mutex{}
 	r.status = RUNNING
 	r.report = &models.Report{
-		Ip:       r.servers[r.nodeid].Ip.String(),
+		Name:     r.config.Servers[r.nodeid].Name,
 		Messages: make([]string, 0, 100),
 	}
 
+	r.receiveChannels = make([]chan []byte, r.config.NumberOfNodes)
 	for i := range r.receiveChannels {
 		r.receiveChannels[i] = make(chan []byte, 10)
 	}
@@ -157,7 +150,7 @@ func (r *Runner) start() {
 	time.Sleep(time.Millisecond * 10)
 
 	r.timeoutTimer = time.AfterFunc(time.Second*time.Duration(r.config.MaxTimeSeconds), func() {
-		r.error(fmt.Errorf("Timeout!"), "runner.start")
+		r.error(fmt.Errorf("timeout"), "runner.start")
 	})
 	r.startTime = time.Now()
 
@@ -190,11 +183,12 @@ func (r *Runner) start() {
 					r.stdin.Write(r.formatInt(source))
 					r.stdin.Write(data)
 				case <-r.stopReceive:
+					log.Println("Stop receive")
 					continue
 				}
 			} else if buffer[0] == SEND {
 				if r.report.SendCount >= r.config.MaxMsgsPerNode {
-					r.error(fmt.Errorf("Too many msgs!"), "runner.start.send")
+					r.error(fmt.Errorf("too many messages"), "runner.start.send")
 					return
 				}
 				target, err := r.readInt(r.stderr)
@@ -212,7 +206,7 @@ func (r *Runner) start() {
 					r.report.LargestMsg = length
 				}
 				if length > r.config.MaxMsgSize {
-					r.error(fmt.Errorf("Msg too big!"), "runner.start.send")
+					r.error(fmt.Errorf("msg too big"), "runner.start.send")
 					return
 				}
 
@@ -223,7 +217,7 @@ func (r *Runner) start() {
 					return
 				}
 				conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s",
-					r.servers[target].PrivateIp.String(),
+					r.config.Servers[target].PrivateIP.String(),
 					r.port,
 				))
 				if err != nil {
@@ -287,9 +281,10 @@ func (r *Runner) tcpListen() {
 		r.receiveChannels[source] <- data
 		conn.Close()
 	}
+	log.Println("Stop tcp listen")
 }
 
-func (r *Runner) error(err error, wrap string) {
+func (r *Runner) error(reportErr error, wrap string) {
 	if r.cmd != nil && r.cmd.Process != nil && r.status == RUNNING {
 		err := r.cmd.Process.Kill()
 		if err != nil {
@@ -297,7 +292,7 @@ func (r *Runner) error(err error, wrap string) {
 		}
 		r.stopReceive <- true
 	}
-	r.debug(errors.Wrap(err, wrap).Error())
+	r.debug(errors.Wrap(reportErr, wrap).Error())
 	r.status = ERROR
 }
 
@@ -376,7 +371,7 @@ func (r *Runner) monitorMemory() {
 			r.report.MaxMemory = size
 		}
 		if size > r.config.MaxMemory {
-			r.error(fmt.Errorf("Out of memory!"), "monitormemory")
+			r.error(fmt.Errorf("out of memory"), "monitormemory")
 			return
 		}
 

@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -60,21 +59,27 @@ to quickly create a Cobra application.`,
 
 		inv, err := inventory.Init(viper.GetString("inventory"))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not init inventory: %v", err)
 		}
 		servers, err := inv.Get()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not get inventory: %v", err)
 		}
+
+		if len(servers) < cfg.NumberOfNodes {
+			log.Fatal("not enough running servers")
+		}
+
+		cfg.Servers = servers[:cfg.NumberOfNodes]
 
 		err = generate.MessageH(cfg.NumberOfNodes)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not generate message.h: %v", err)
 		}
 
 		file, err := utils.FindFileBasename("cpp")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not find file cpp: %v", err)
 		}
 
 		utils.GetHFileFromDownloads(file)
@@ -82,32 +87,27 @@ to quickly create a Cobra application.`,
 		log.Println("Compiling ...")
 		err = compile.Compile(file)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not compile: %v", err)
 		}
 
 		log.Println("Removing message.h")
 		err = os.Remove("message.h")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not remove message.h: %v", err)
 		}
 
 		log.Println("Distributing ...")
-		appFile, err := os.Open(file + ".app")
+		fileApp := file + ".app"
+		err = utils.Upload(fileApp, fileApp, cfg.Servers...)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not upload %s: %v", fileApp, err)
 		}
-		url := fmt.Sprintf("/distribute/%s.app/?exec=true", file)
-		err = utils.Send(servers[0], url, appFile, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		appFile.Close()
 
 		log.Println("Running...")
 		report := &daemon.RunReport{}
-		err = utils.Send(servers[0], "/run/", cfg, report)
+		err = utils.Send(cfg.Servers[0], "/run/", cfg, report)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not run: %v", err)
 		}
 
 		maxTime := int64(0)
@@ -116,7 +116,7 @@ to quickly create a Cobra application.`,
 		onlyOneNodeMessages := true
 		oneNodeMessages := []string{}
 
-		for i, report := range report.Reports {
+		for _, report := range report.Reports {
 			if report.RunTime > maxTime {
 				maxTime = report.RunTime
 			}
@@ -124,9 +124,8 @@ to quickly create a Cobra application.`,
 				maxMemory = report.MaxMemory
 			}
 			log.Printf(
-				"Node %d (ip: %s, msgs: %d, largest: %s, time: %s, memory: %s):",
-				i,
-				report.Ip,
+				"Node %s (msgs: %d, largest: %s, time: %s, memory: %s):",
+				report.Name,
 				report.SendCount,
 				utils.FormatSize(report.LargestMsg),
 				utils.FormatDuration(report.RunTime),
@@ -161,12 +160,6 @@ to quickly create a Cobra application.`,
 				utils.FormatDuration(maxTime),
 				utils.FormatSize(maxMemory),
 			)
-		}
-
-		deleteUrl := fmt.Sprintf("/deleteall/%s.app/", file)
-		err = utils.Send(servers[0], deleteUrl, nil, nil)
-		if err != nil {
-			log.Fatal(err)
 		}
 	},
 }
