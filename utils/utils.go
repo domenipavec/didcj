@@ -31,21 +31,22 @@ var SSHParams = []string{
 	"ForwardAgent=yes",
 }
 
-func FindFileBasename(extension string) (string, error) {
-	cppFiles, err := filepath.Glob("*." + extension)
-	if err != nil {
-		return "", errors.Wrap(err, "FindFileBasename glob")
-	}
+func FindFileBasename(extensions ...string) (string, error) {
+	for _, extension := range extensions {
+		files, err := filepath.Glob("*." + extension)
+		if err != nil {
+			return "", errors.Wrap(err, "could not glob")
+		}
 
-	if len(cppFiles) < 1 {
-		return "", fmt.Errorf("no .%s files found", extension)
-	}
+		if len(files) > 1 {
+			return "", fmt.Errorf("more than 1 .%s file found", extension)
+		}
 
-	if len(cppFiles) > 1 {
-		return "", fmt.Errorf("more than 1 .%s file found", extension)
+		if len(files) == 1 {
+			return strings.TrimSuffix(files[0], "."+extension), nil
+		}
 	}
-
-	return strings.TrimSuffix(cppFiles[0], "."+extension), nil
+	return "", fmt.Errorf("no files found (.%s)", strings.Join(extensions, ", "))
 }
 
 func Upload(srcFile, destFile string, servers ...*models.Server) error {

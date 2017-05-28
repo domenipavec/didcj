@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"strconv"
 
+	"github.com/matematik7/didcj/compile"
 	"github.com/matematik7/didcj/utils"
 	"github.com/spf13/cobra"
 )
@@ -39,12 +40,17 @@ var localCmd = &cobra.Command{
 	Long: `Runs the codejam code locally using dcj.sh which should be in
 your path. It looks for updated .h file in ~/Downloads/`,
 	Run: func(cmd *cobra.Command, args []string) {
-		file, err := utils.FindFileBasename("cpp")
+		file, err := utils.FindFileBasename("cpp", "dcj")
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		utils.GetHFileFromDownloads(file)
+
+		err = compile.Transpile(file)
+		if err != nil {
+			log.Fatalf("could not transiple: %v", err)
+		}
 
 		dcjCmd := exec.Command("dcj.sh", "test", "--source", file+".cpp", "--nodes", strconv.Itoa(LocalNodes))
 		dcjCmd.Stdout = os.Stdout

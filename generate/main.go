@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/matematik7/didcj/templates"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +18,7 @@ func MainCpp(filename, getn string) error {
 
 	basename := strings.TrimSuffix(filename, ".cpp")
 
-	_, err = fmt.Fprintf(f, templates.String("main.cpp"), basename, getn)
+	_, err = fmt.Fprintf(f, templates.Box.String("main.cpp"), basename, getn)
 	if err != nil {
 		return errors.Wrap(err, "generate.MainCpp fprintf")
 	}

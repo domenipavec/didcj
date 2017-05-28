@@ -77,7 +77,7 @@ to quickly create a Cobra application.`,
 			log.Fatalf("could not generate message.h: %v", err)
 		}
 
-		file, err := utils.FindFileBasename("cpp")
+		file, err := utils.FindFileBasename("cpp", "dcj")
 		if err != nil {
 			log.Fatalf("could not find file cpp: %v", err)
 		}
@@ -85,6 +85,10 @@ to quickly create a Cobra application.`,
 		utils.GetHFileFromDownloads(file)
 
 		log.Println("Compiling ...")
+		err = compile.Transpile(file)
+		if err != nil {
+			log.Fatalf("could not transpile: %v", err)
+		}
 		err = compile.Compile(file)
 		if err != nil {
 			log.Fatalf("could not compile: %v", err)

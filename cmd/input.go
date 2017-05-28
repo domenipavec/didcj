@@ -45,7 +45,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		file, err := utils.FindFileBasename("cpp")
+		file, err := utils.FindFileBasename("cpp", "dcj")
 		if err != nil {
 			log.Fatal(err)
 		}

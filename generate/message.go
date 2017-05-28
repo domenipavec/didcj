@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/matematik7/didcj/templates"
 	"github.com/pkg/errors"
 )
 
@@ -14,7 +15,7 @@ func MessageH(numberOfNodes int) error {
 	}
 	defer f.Close()
 
-	_, err = fmt.Fprintf(f, templates.String("message.h"), numberOfNodes)
+	_, err = fmt.Fprintf(f, templates.Box.String("message.h"), numberOfNodes)
 	if err != nil {
 		return errors.Wrap(err, "GenerateMessageH fprintf")
 	}

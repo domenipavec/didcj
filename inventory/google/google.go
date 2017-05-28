@@ -24,7 +24,7 @@ type Google struct {
 func New() *Google {
 	return &Google{
 		zones:        []string{"europe-west1-d", "us-east1-b", "us-west1-b", "us-east4-c", "us-central1-f"},
-		nodesPerZone: 69,
+		nodesPerZone: 100,
 	}
 }
 
