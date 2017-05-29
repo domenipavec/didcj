@@ -1,0 +1,108 @@
+#include <stdint.h>
+#include <cassert>
+#include <sstream>
+
+static const int64_t PRIME = 1000000007;
+
+#import <modulo.cpp>
+
+int main() {
+    Mod m(1000);
+    assert(m == 1000);
+
+    m = 200;
+    assert(m == 200);
+
+    m = 1000000007;
+    assert(m == 0);
+
+    m = 1000000008;
+    assert(m == 1);
+
+    m = -1;
+    assert(m == 1000000006);
+
+    m = 3;
+    assert(++m == 4);
+    assert(m == 4);
+
+    m = 1000000006;
+    assert(m++ == 1000000006);
+    assert(m == 0);
+
+    m = 3;
+    m--;
+    assert(m == 2);
+
+    m = 0;
+    m--;
+    assert(m == 1000000006);
+
+    m = 1000000005;
+    m += 5;
+    assert(m == 3);
+
+    Mod a(1000000000), b(1000000000), c(1000000000);
+    assert(a + b + c == 999999986);
+    assert(a == 1000000000);
+    assert(b == 1000000000);
+    assert(c == 1000000000);
+
+    m = 3;
+    assert(m + 2000000017 == 6);
+    assert(2000000017 + m == 6);
+
+    m = 3;
+    m -= 5;
+    assert(m == 1000000005);
+
+    assert(a - b - c == 7);
+    assert(a == 1000000000);
+    assert(b == 1000000000);
+    assert(c == 1000000000);
+
+    m = 3;
+    assert(m - 2000000017 == 0);
+    assert(2000000017 - m == 0);
+
+    m = 100000;
+    assert(m * 100000 == 999999937);
+    assert(100000 * m == 999999937);
+    assert(m * -1 == 999900007);
+    assert(m * 9223372036854775807 == 200096181);
+    assert(m * -9223372036854775807 == 799903826);
+
+    m *= -1;
+    assert(m == 999900007);
+
+    m = 100000;
+    assert(exp(m, 0) == 1);
+    assert(exp(m, 1) == 100000);
+    assert(exp(m, 2) == 999999937);
+    assert(exp(m, 3) == 993000007);
+    assert(exp(m, 4) == 4900);
+    assert(exp(m, 9223372036854775807) == 841443036);
+    assert(m == 100000);
+
+    m ^= 3;
+    assert(m == 993000007);
+
+    m = 2;
+    assert(a * exp(m, -1) == 500000000);
+    assert(a * exp(m, -2) == 250000000);
+
+    m = 6;
+    assert(m/3 == 2);
+    assert(m == 6);
+
+    m = 73741817;
+    m /= 2;
+    assert(m == 536870912);
+
+    m = 1000000119;
+    std::stringstream stream;
+    stream << m;
+    assert(stream.str() == "112");
+
+    return 0;
+}
