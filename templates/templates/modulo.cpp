@@ -93,6 +93,11 @@ public:
         return value;
     }
 
+    static Mod exp(Mod lhs, const int64_t& rhs) {
+        lhs ^= rhs;
+        return lhs;
+    }
+
     friend bool operator==(const Mod& a, const Mod& b) {
         return a.Get() == b.Get();
     }
@@ -113,11 +118,6 @@ public:
 
     friend Mod operator*(Mod lhs, const Mod& rhs) {
         lhs *= rhs;
-        return lhs;
-    }
-
-    friend Mod exp(Mod lhs, const int64_t& rhs) {
-        lhs ^= rhs;
         return lhs;
     }
 

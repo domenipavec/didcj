@@ -76,20 +76,20 @@ int main() {
     assert(m == 999900007);
 
     m = 100000;
-    assert(exp(m, 0) == 1);
-    assert(exp(m, 1) == 100000);
-    assert(exp(m, 2) == 999999937);
-    assert(exp(m, 3) == 993000007);
-    assert(exp(m, 4) == 4900);
-    assert(exp(m, 9223372036854775807) == 841443036);
+    assert(Mod::exp(m, 0) == 1);
+    assert(Mod::exp(m, 1) == 100000);
+    assert(Mod::exp(m, 2) == 999999937);
+    assert(Mod::exp(m, 3) == 993000007);
+    assert(Mod::exp(m, 4) == 4900);
+    assert(Mod::exp(m, 9223372036854775807) == 841443036);
     assert(m == 100000);
 
     m ^= 3;
     assert(m == 993000007);
 
     m = 2;
-    assert(a * exp(m, -1) == 500000000);
-    assert(a * exp(m, -2) == 250000000);
+    assert(a * Mod::exp(m, -1) == 500000000);
+    assert(a * Mod::exp(m, -2) == 250000000);
 
     m = 6;
     assert(m/3 == 2);
