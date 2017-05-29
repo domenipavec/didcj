@@ -65,6 +65,10 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
+		if StartDaemonOnly && len(servers) != StartNodes {
+			log.Fatal("Not enough servers started")
+		}
+
 		log.Println("Killing didcj")
 		err = utils.Run(servers, "killall", "-q", "didcj")
 		if err != nil && errors.Cause(err).Error() != "exit status 1" {
