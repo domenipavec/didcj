@@ -110,7 +110,7 @@ func Run(servers []*models.Server, params ...string) error {
 
 		err := cmd.Start()
 		if err != nil {
-			return errors.Wrap(err, "Run start")
+			return errors.Wrap(err, "could not start run cmd")
 		}
 
 		sshCmds = append(sshCmds, cmd)
@@ -118,7 +118,7 @@ func Run(servers []*models.Server, params ...string) error {
 	for _, cmd := range sshCmds {
 		err := cmd.Wait()
 		if err != nil {
-			return errors.Wrap(err, "Run wait")
+			return errors.Wrap(err, "could not run cmd")
 		}
 	}
 	return nil

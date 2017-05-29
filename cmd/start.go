@@ -29,6 +29,7 @@ import (
 	"github.com/matematik7/didcj/inventory"
 	"github.com/matematik7/didcj/models"
 	"github.com/matematik7/didcj/utils"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -66,7 +67,7 @@ to quickly create a Cobra application.`,
 
 		log.Println("Killing didcj")
 		err = utils.Run(servers, "killall", "-q", "didcj")
-		if err != nil {
+		if err != nil && errors.Cause(err).Error() != "exit status 1" {
 			log.Fatalf("could not kill didcj: %v", err)
 		}
 
