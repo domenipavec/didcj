@@ -10,6 +10,9 @@
 
 using namespace std;
 
+static const int64_t PRIME = 1000000007;
+
+#import "modulo.cpp"
 
 int main() {
     int64_t TOTAL_N = %s();

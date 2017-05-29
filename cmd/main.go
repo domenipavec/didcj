@@ -46,8 +46,8 @@ to quickly create a Cobra application.`,
 			return
 		}
 		filename := args[0]
-		if !strings.HasSuffix(filename, ".cpp") {
-			filename += ".cpp"
+		if !strings.HasSuffix(filename, ".dcj") {
+			filename += ".dcj"
 		}
 
 		cfg, err := config.Get()
@@ -64,7 +64,7 @@ to quickly create a Cobra application.`,
 		}
 
 		log.Println("Generating", filename, "...")
-		err = generate.MainCpp(filename, getn)
+		err = generate.MainDcj(filename, getn)
 		if err != nil {
 			log.Fatal(err)
 		}

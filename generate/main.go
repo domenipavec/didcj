@@ -9,18 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func MainCpp(filename, getn string) error {
+func MainDcj(filename, getn string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return errors.Wrap(err, "generate.MainCpp file create")
+		return errors.Wrap(err, "generate.MainDcj file create")
 	}
 	defer f.Close()
 
-	basename := strings.TrimSuffix(filename, ".cpp")
+	basename := strings.TrimSuffix(filename, ".dcj")
 
-	_, err = fmt.Fprintf(f, templates.Box.String("main.cpp"), basename, getn)
+	_, err = fmt.Fprintf(f, templates.Box.String("main.dcj"), basename, getn)
 	if err != nil {
-		return errors.Wrap(err, "generate.MainCpp fprintf")
+		return errors.Wrap(err, "generate.MainDcj fprintf")
 	}
 
 	return nil
