@@ -17,7 +17,7 @@ static const int64_t PRIME = 1000000007;
 
 int main() {
     int64_t start, end;
-    calculate_bounds(NumberOfNodes(), GetLength(), MyNodeId(), &start, &end);
+    calculate_bounds(NumberOfNodes(), %s(), MyNodeId(), &start, &end);
 
     int64_t result = 0;
     for (int64_t i = start; i < end; i++) {

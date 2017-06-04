@@ -10,6 +10,7 @@ import (
 )
 
 const inputh = `
+#include <chrono>
 #include <random>
 
 std::random_device rd;
@@ -20,7 +21,11 @@ std::mt19937 gen(rd());
 
 const function = `
 %s %s(%s) {
+	%s result;
+	std::chrono::high_resolution_clock::time_point startTime(std::chrono::high_resolution_clock::now());
 %s
+	while (std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() < %d);
+	return result;
 }
 `
 
@@ -44,7 +49,7 @@ var returnGenerators = map[string]returnGenerator{
 }
 
 const constantFunction = `
-    return %s;
+    result = %s;
 `
 
 type constantConfig struct {
@@ -62,7 +67,7 @@ func constantGenerator(rawConfig json.RawMessage, typ string) (string, error) {
 
 const randomRangeFunction = `
     std::uniform_int_distribution<%s> dis(%v, %v);
-    return dis(gen);
+    result = dis(gen);
 `
 
 type randomRangeConfig struct {
@@ -82,7 +87,7 @@ func randomRangeGenerator(rawConfig json.RawMessage, typ string) (string, error)
 const randomListFunction = `
     const %s values[] = {%s};
     std::uniform_int_distribution<unsigned long long> dis(0, %v);
-    return values[dis(gen)];
+    result = values[dis(gen)];
 `
 
 type randomListConfig struct {
@@ -151,6 +156,8 @@ func formatInput(input config.Input) (string, error) {
 		returnType,
 		input.Name,
 		inputs,
+		returnType,
 		code,
+		input.DurationNs,
 	), nil
 }

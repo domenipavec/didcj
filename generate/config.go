@@ -33,10 +33,11 @@ func ConfigJson() error {
 		MaxMsgsPerNode: 1000,
 		MaxMsgSizeMb:   8,
 		MaxMemoryMb:    128,
-		MaxTimeSeconds: 2,
+		MaxTimeSeconds: 10,
 		Input: []config.Input{
 			config.Input{
 				Name:            "GetN",
+				DurationNs:      100,
 				Inputs:          []string{},
 				ReturnType:      "int64",
 				ReturnGenerator: "CONSTANT",
@@ -44,6 +45,7 @@ func ConfigJson() error {
 			},
 			config.Input{
 				Name:            "GetA",
+				DurationNs:      100,
 				Inputs:          []string{"int64"},
 				ReturnType:      "int64",
 				ReturnGenerator: "RANDOM_RANGE",
@@ -51,6 +53,7 @@ func ConfigJson() error {
 			},
 			config.Input{
 				Name:            "GetB",
+				DurationNs:      100,
 				Inputs:          []string{"int64"},
 				ReturnType:      "int8",
 				ReturnGenerator: "RANDOM_LIST",
