@@ -19,6 +19,7 @@ static const char SEND = 0;
 static const char RECEIVE = 1;
 static const char DEBUG = 2;
 static const char NODEID = 3;
+static const char TIMER = 4;
 static buffer incoming_buffers[MAX_MACHINES];
 static buffer outgoing_buffers[MAX_MACHINES];
 
@@ -38,6 +39,12 @@ void freadint(int *value, FILE * in) {
 
 void Debug(const char *s) {
 	fputc(DEBUG, stderr);
+	fputint(strlen(s), stderr);
+	fputs(s, stderr);
+}
+
+void Timer(const char *s) {
+	fputc(TIMER, stderr);
 	fputint(strlen(s), stderr);
 	fputs(s, stderr);
 }

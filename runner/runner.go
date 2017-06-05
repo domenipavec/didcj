@@ -24,6 +24,7 @@ const (
 	RECEIVE = 1
 	DEBUG   = 2
 	NODEID  = 3
+	TIMER   = 4
 )
 
 const (
@@ -256,6 +257,22 @@ func (r *Runner) start() {
 					r.error(err, "runner.start.debug")
 				}
 				r.debug(string(msg))
+			} else if buffer[0] == TIMER {
+				length, err := r.readInt(r.stderr)
+				if err != nil {
+					r.error(err, "runner.start.debug")
+					return
+				}
+				msg := make([]byte, length)
+				_, err = io.ReadFull(r.stderr, msg)
+				if err != nil {
+					r.error(err, "runner.start.debug")
+				}
+				r.debug(fmt.Sprintf(
+					"Timer %s: %s",
+					msg,
+					utils.FormatDuration(int64(time.Now().Sub(r.startTime))),
+				))
 			} else if buffer[0] == NODEID {
 				r.stdin.Write(r.formatInt(nodeid))
 			} else {
