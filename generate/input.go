@@ -43,9 +43,11 @@ var typeMap = map[string]string{
 type returnGenerator func(rawConfig json.RawMessage, typ string) (string, error)
 
 var returnGenerators = map[string]returnGenerator{
-	"CONSTANT":     constantGenerator,
-	"RANDOM_RANGE": randomRangeGenerator,
-	"RANDOM_LIST":  randomListGenerator,
+	"CONSTANT":                constantGenerator,
+	"RANDOM_RANGE":            randomRangeGenerator,
+	"INCREASING_RANDOM_RANGE": increasingRandomRangeGenerator,
+	"DECREASING_RANDOM_RANGE": decreasingRandomRangeGenerator,
+	"RANDOM_LIST":             randomListGenerator,
 }
 
 const constantFunction = `
@@ -82,6 +84,48 @@ func randomRangeGenerator(rawConfig json.RawMessage, typ string) (string, error)
 		return "", err
 	}
 	return fmt.Sprintf(randomRangeFunction, typ, config.Min, config.Max-1), nil
+}
+
+const increasingRandomRangeFunction = `
+	static const uint64_t window = %v/NumberOfNodes();
+    std::uniform_int_distribution<%s> dis(%v + i0 * window, %v + (i0 + 1) * window - 1);
+    result = dis(gen);
+`
+
+func increasingRandomRangeGenerator(rawConfig json.RawMessage, typ string) (string, error) {
+	config := randomRangeConfig{}
+	err := json.Unmarshal(rawConfig, &config)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(
+		increasingRandomRangeFunction,
+		config.Max-config.Min,
+		typ,
+		config.Min,
+		config.Min,
+	), nil
+}
+
+const decreasingRandomRangeFunction = `
+	static const uint64_t window = %v/NumberOfNodes();
+    std::uniform_int_distribution<%s> dis(%v - (i0 + 1) * window, %v - (i0 * window) - 1);
+    result = dis(gen);
+`
+
+func decreasingRandomRangeGenerator(rawConfig json.RawMessage, typ string) (string, error) {
+	config := randomRangeConfig{}
+	err := json.Unmarshal(rawConfig, &config)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(
+		decreasingRandomRangeFunction,
+		config.Max-config.Min,
+		typ,
+		config.Max,
+		config.Max,
+	), nil
 }
 
 const randomListFunction = `
