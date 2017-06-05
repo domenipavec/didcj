@@ -163,7 +163,7 @@ func (r *Runner) start() {
 
 	go r.handleStdout()
 
-	time.Sleep(time.Millisecond * 10)
+	time.Sleep(time.Millisecond * 100)
 
 	r.timeoutTimer = time.AfterFunc(time.Second*time.Duration(r.config.MaxTimeSeconds), func() {
 		r.error(fmt.Errorf("timeout"), "runner.start")
@@ -237,7 +237,7 @@ func (r *Runner) start() {
 					r.port,
 				))
 				if err != nil {
-					r.debug(errors.Wrap(err, "runner.start.send").Error())
+					r.error(err, "could not connect tcp")
 					continue
 				}
 				conn.Write(r.formatInt(nodeid))
