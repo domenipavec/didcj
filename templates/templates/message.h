@@ -43,12 +43,6 @@ void Debug(const char *s) {
 	fputs(s, stderr);
 }
 
-void Timer(const char *s) {
-	fputc(TIMER, stderr);
-	fputint(strlen(s), stderr);
-	fputs(s, stderr);
-}
-
 static void putRawByte(buffer* buf, unsigned char byte) {
 	if (buf->pos >= buf->size) {
 		buf->size = 2 * buf->size;

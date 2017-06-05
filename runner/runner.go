@@ -200,7 +200,6 @@ func (r *Runner) start() {
 					r.stdin.Write(r.formatInt(source))
 					r.stdin.Write(data)
 				case <-r.stopReceive:
-					log.Println("Stop receive")
 					continue
 				}
 			} else if buffer[0] == SEND {
@@ -321,7 +320,6 @@ func (r *Runner) tcpListen() {
 		r.receiveChannels[source] <- data
 		conn.Close()
 	}
-	log.Println("Stop tcp listen")
 }
 
 func (r *Runner) error(reportErr error, wrap string) {

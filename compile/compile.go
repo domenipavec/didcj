@@ -14,7 +14,7 @@ import (
 var importRegex = regexp.MustCompile("#import *[<\"]([a-zA-Z0-9./]+)[>\"]")
 
 func Compile(file string) error {
-	gppCmd := exec.Command("g++", "-std=gnu++0x", "-O2", "-static", "-lm", "-I.", "-o", file+".app", file+".cpp")
+	gppCmd := exec.Command("g++", "-std=gnu++0x", "-O2", "-static", "-lm", "-DDIDCJ", "-I.", "-o", file+".app", file+".cpp")
 	gppCmd.Stdout = os.Stdout
 	gppCmd.Stderr = os.Stderr
 	return gppCmd.Run()

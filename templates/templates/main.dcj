@@ -13,6 +13,7 @@ using namespace std;
 static const int64_t PRIME = 1000000007;
 
 #import "bounds.cpp"
+#import "debug.cpp"
 #import "modulo.cpp"
 
 int main() {
