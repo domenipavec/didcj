@@ -259,7 +259,12 @@ func (r *Runner) start() {
 			} else if buffer[0] == NODEID {
 				r.stdin.Write(r.formatInt(nodeid))
 			} else {
-				r.error(fmt.Errorf("Invalid buffer: %v", buffer), "runner.start")
+				msg, err := ioutil.ReadAll(r.stderr)
+				if err != nil {
+					r.error(err, "could not readall on invalid buffer")
+				}
+				msg = append(buffer, msg...)
+				r.error(fmt.Errorf("Invalid buffer: %v", string(msg)), "runner.start")
 			}
 		}
 	}
