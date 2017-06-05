@@ -29,6 +29,14 @@ const function = `
 }
 `
 
+const functionWithoutTimer = `
+%s %s(%s) {
+	%s result;
+%s
+	return result;
+}
+`
+
 var typeMap = map[string]string{
 	"int64":  "long long",
 	"uint64": "unsigned long long",
@@ -196,12 +204,26 @@ func formatInput(input config.Input) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(function,
-		returnType,
-		input.Name,
-		inputs,
-		returnType,
-		code,
-		input.DurationNs,
-	), nil
+
+	var f string
+	if input.DurationNs > 0 {
+		f = fmt.Sprintf(function,
+			returnType,
+			input.Name,
+			inputs,
+			returnType,
+			code,
+			input.DurationNs,
+		)
+	} else {
+		f = fmt.Sprintf(functionWithoutTimer,
+			returnType,
+			input.Name,
+			inputs,
+			returnType,
+			code,
+		)
+	}
+
+	return f, nil
 }

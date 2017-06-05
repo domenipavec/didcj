@@ -37,7 +37,7 @@ func ConfigJson() error {
 		Input: []config.Input{
 			config.Input{
 				Name:            "GetN",
-				DurationNs:      100,
+				DurationNs:      0,
 				Inputs:          []string{},
 				ReturnType:      "int64",
 				ReturnGenerator: "CONSTANT",
@@ -45,7 +45,7 @@ func ConfigJson() error {
 			},
 			config.Input{
 				Name:            "GetA",
-				DurationNs:      100,
+				DurationNs:      0,
 				Inputs:          []string{"int64"},
 				ReturnType:      "int64",
 				ReturnGenerator: "RANDOM_RANGE",
@@ -53,7 +53,7 @@ func ConfigJson() error {
 			},
 			config.Input{
 				Name:            "GetB",
-				DurationNs:      100,
+				DurationNs:      0,
 				Inputs:          []string{"int64"},
 				ReturnType:      "int8",
 				ReturnGenerator: "RANDOM_LIST",
